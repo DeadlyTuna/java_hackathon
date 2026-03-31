@@ -19,7 +19,7 @@ const CFG = {
   ALERT_THRESHOLD_SNR:     10,
   ALERT_THRESHOLD_ENTROPY: 0.65,
   HOP_SEQUENCE:   [10, 14, 8, 17, 11, 19, 7, 13, 16, 9],
-  DEMO_MODE:      true,   // <-- set false when backend is running
+  DEMO_MODE:      false,   // <-- set false when backend is running
 };
 
 // ══════════════════════════════════════
@@ -483,6 +483,14 @@ function stopAttack() {
 }
 
 function deployCountermeasure() {
+  // ── FIX: stop any active attack before deploying countermeasure ──
+  if (STATE.attackActive) {
+    STATE.attackActive = false;
+    DOM.attackBtn.classList.remove('active');
+    DOM.attackBtn.querySelector('.btn-text').textContent = 'INITIATE ATTACK';
+    if (socket) socket.emit('attack_stop');
+  }
+
   STATE.hopActive = true;
   STATE.hopCount++;
   const prevIdx = STATE.currentHopIdx;
@@ -499,9 +507,6 @@ function deployCountermeasure() {
   setTimeout(() => {
     if (STATE.mode === 'HOPPING') {
       STATE.hopActive = false;
-      STATE.attackActive = false;
-      DOM.attackBtn.classList.remove('active');
-      DOM.attackBtn.querySelector('.btn-text').textContent = 'INITIATE ATTACK';
       DOM.defendBtn.disabled = true;
       DOM.freqStatus.textContent = 'LOCKED';
       applyMode('RESTORED');
@@ -564,7 +569,7 @@ function updateDisplay(data) {
     DOM.freqValue.textContent = `${current_frequency} Hz`;
   }
 
-  // Mode sync (from backend)
+  // Mode sync (from backend) — only when frontend is idle
   if (mode && mode !== STATE.mode && !STATE.attackActive && !STATE.hopActive) {
     applyMode(mode);
   }
@@ -755,7 +760,9 @@ function connectBackend() {
     socket.on('alert', data => {
       const sev = data.severity || 'MEDIUM';
       addLogEntry(sev, data.message, data.metrics);
-      if (sev === 'CRITICAL' && STATE.mode !== 'ATTACK') {
+      // ── FIX: only switch to ATTACK mode from backend alert if we didn't
+      //    trigger it ourselves (prevents echo from our own attack_start emit)
+      if (sev === 'CRITICAL' && STATE.mode !== 'ATTACK' && !STATE.attackActive) {
         applyMode('ATTACK');
         STATE.alertCount++;
       }
