@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SpectraShield — RF Intrusion Detection</title>
 <style>
-/* ═══ FONTS (system stack — no network needed) ═══ */
 :root {
   --bg0:       #060a0d;
   --bg1:       #0a1018;
@@ -36,31 +35,23 @@ body{
   font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;
   font-size:13px;user-select:none;
 }
-/* scanlines */
 body::before{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
   background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
 }
+
 /* ══ ALERT OVERLAY ══ */
 #alert-overlay{
-  display:none;position:fixed;inset:0;z-index:8000;
+  position:fixed;inset:0;z-index:8000;
   border:3px solid var(--red);pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
   animation:ov-pulse .6s ease-in-out infinite alternate;
 }
-#alert-overlay.show{display:flex;align-items:center;justify-content:center}
-#alert-overlay-bg{
-  position:absolute;inset:0;
-  background:rgba(255,20,20,.07);
-}
-#alert-overlay-text{
-  position:relative;text-align:center;
-}
+#alert-overlay.hidden{display:none}
+#alert-overlay-bg{position:absolute;inset:0;background:rgba(255,20,20,.07);}
+#alert-overlay-text{position:relative;text-align:center;}
 .ov-icon{font-size:50px;color:var(--red);text-shadow:0 0 30px var(--red);animation:flash .4s step-start infinite}
-.ov-title{
-  font-family:var(--display);font-size:34px;font-weight:900;
-  letter-spacing:6px;color:var(--red);text-shadow:0 0 40px var(--red);
-  margin:8px 0 4px;
-}
+.ov-title{font-family:var(--display);font-size:34px;font-weight:900;letter-spacing:6px;color:var(--red);text-shadow:0 0 40px var(--red);margin:8px 0 4px;}
 .ov-sub{font-family:var(--mono);font-size:12px;color:rgba(255,100,100,.8);letter-spacing:2px}
 @keyframes ov-pulse{from{border-color:rgba(255,45,45,.35)}to{border-color:rgba(255,45,45,.9)}}
 @keyframes flash{0%,100%{opacity:1}50%{opacity:.15}}
@@ -77,18 +68,11 @@ body::before{
 
 .logo{display:flex;align-items:center;gap:8px}
 .logo-hex{font-size:22px;color:var(--green);text-shadow:0 0 16px var(--green)}
-.logo-name{
-  font-family:var(--display);font-size:19px;font-weight:700;
-  letter-spacing:3px;color:var(--textb);text-transform:uppercase;
-}
+.logo-name{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:3px;color:var(--textb);text-transform:uppercase;}
 .logo-accent{color:var(--green)}
-.logo-ver{
-  font-family:var(--mono);font-size:9px;color:var(--textd);
-  letter-spacing:1px;align-self:flex-end;margin-bottom:3px;
-}
+.logo-ver{font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:1px;align-self:flex-end;margin-bottom:3px;}
 .tdiv{width:1px;height:24px;background:var(--border);flex-shrink:0}
 
-/* badge */
 .sys-badge{
   display:flex;align-items:center;gap:7px;
   padding:4px 12px;border-radius:2px;
@@ -109,13 +93,8 @@ body::before{
 .sys-badge.attack .blabel{color:var(--red)}
 .sys-badge.hop .blabel{color:var(--blue)}
 
-/* ticker */
 .ticker-wrap{overflow:hidden;width:100%;mask-image:linear-gradient(90deg,transparent,black 6%,black 94%,transparent)}
-.ticker{
-  font-family:var(--mono);font-size:10px;color:var(--textd);
-  letter-spacing:1.5px;white-space:nowrap;
-  animation:tick 28s linear infinite;
-}
+.ticker{font-family:var(--mono);font-size:10px;color:var(--textd);letter-spacing:1.5px;white-space:nowrap;animation:tick 28s linear infinite;}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 .hstat{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
@@ -133,17 +112,13 @@ body::before{
   height:calc(100vh - 48px - 30px);
   gap:1px;background:var(--border);
 }
-/* panels */
 .panel{background:var(--bg1);overflow:hidden}
 .ph{
   display:flex;align-items:center;gap:8px;
   padding:8px 13px;border-bottom:1px solid var(--border);
   background:var(--bg2);flex-shrink:0;
 }
-.pl{
-  font-family:var(--display);font-size:11px;font-weight:700;
-  letter-spacing:2.5px;color:var(--greend);text-transform:uppercase;flex:1;
-}
+.pl{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--greend);text-transform:uppercase;flex:1;}
 .pls{font-weight:400;color:var(--textd);letter-spacing:1.5px}
 .pc{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
 
@@ -155,7 +130,7 @@ body::before{
 .snr-block{display:flex;flex-direction:column;align-items:center;padding:14px 13px 6px}
 .snr-readout{text-align:center;margin-top:4px}
 .snr-val{font-family:var(--mono);font-size:30px;color:var(--green);text-shadow:0 0 18px rgba(0,229,160,.5);line-height:1}
-.snr-unit{font-family:var(--mono);font-size:10px;color:var(--textd);letter-spacing:2px;display:block;margin-top:2px}
+.snr-unit{font-family:var(--mono);font-size:10px;color:var(--textd);letter-spacing:2px;display:block;margin-top:2px;}
 
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border)}
 .mtile{background:var(--bg1);padding:9px 11px}
@@ -184,6 +159,8 @@ body::before{
 }
 .cbtn:disabled{opacity:.38;cursor:not-allowed}
 .cbtn-icon{font-size:14px;flex-shrink:0;line-height:1}
+/* btn-text span inside buttons */
+.btn-text{line-height:1}
 .attack-btn{color:var(--red);border-color:rgba(255,45,45,.3);background:rgba(255,45,45,.05)}
 .attack-btn:not(:disabled):hover{border-color:var(--red);background:rgba(255,45,45,.1)}
 .attack-btn.active{border-color:var(--red);background:rgba(255,45,45,.13);animation:bred .8s ease-in-out infinite alternate}
@@ -197,49 +174,33 @@ body::before{
 .slider-hdr{display:flex;justify-content:space-between;margin-bottom:5px}
 .slider-lbl{font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:2px}
 .slider-val{font-family:var(--mono);font-size:11px;color:var(--amber)}
-input[type=range]{
-  width:100%;height:2px;-webkit-appearance:none;appearance:none;
-  background:var(--bg3);border-radius:1px;outline:none;cursor:pointer;
-}
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
-  background:var(--green);box-shadow:0 0 8px var(--green);cursor:pointer;
-}
+input[type=range]{width:100%;height:2px;-webkit-appearance:none;appearance:none;background:var(--bg3);border-radius:1px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);cursor:pointer;}
 
 .hop-lbl{font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:2px;margin-bottom:7px}
 .hop-chips{display:flex;flex-wrap:wrap;gap:4px}
-.hchip{
-  font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:2px;
-  border:1px solid var(--border);color:var(--textd);transition:.2s;
-}
+.hchip{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:2px;border:1px solid var(--border);color:var(--textd);transition:.2s;}
 .hchip.cur{border-color:var(--blue);color:var(--blue);background:rgba(0,184,255,.1);box-shadow:0 0 8px rgba(0,184,255,.2)}
 .hchip.jammed{border-color:var(--red);color:var(--red);background:rgba(255,45,45,.08);text-decoration:line-through}
 
 /* nodes */
 .node-list{padding:6px 0}
 .nitem{display:flex;align-items:center;gap:9px;padding:9px 13px;border-bottom:1px solid rgba(0,200,160,.04)}
-.ndot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;transition:.2s}
-.ndot.warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
-.ndot.crit{background:var(--red);box-shadow:0 0 6px var(--red);animation:dfast .4s ease-in-out infinite alternate}
+/* class used by JS: node-dot */
+.node-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;transition:.2s}
+.node-dot[data-state="warning"]{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.node-dot[data-state="critical"]{background:var(--red);box-shadow:0 0 6px var(--red);animation:dfast .4s ease-in-out infinite alternate}
 .nname{font-family:var(--mono);font-size:11px;color:var(--text);flex:1;letter-spacing:.5px}
 .nfreq{font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:1px}
 
 /* ══ CHART COLUMN ══ */
 .chart-col{display:flex;flex-direction:column;gap:1px;min-width:0}
 .chart-panel{flex:1;display:flex;flex-direction:column;min-height:0}
-.chart-wrap{flex:1;min-height:0;padding:10px 13px 4px;position:relative}
-.chart-wrap canvas{display:block;width:100%;height:100%}
-.chart-axis{
-  display:flex;justify-content:space-between;
-  padding:2px 13px 7px;
-  font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:1px;flex-shrink:0;
-}
+.chart-wrap{flex:1;min-height:0;padding:10px 13px 4px;position:relative;overflow:hidden}
+.chart-wrap canvas{position:absolute;top:10px;left:13px;right:13px;bottom:4px;width:calc(100% - 26px) !important;height:calc(100% - 14px) !important;}
+.chart-axis{display:flex;justify-content:space-between;padding:2px 13px 7px;font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:1px;flex-shrink:0;}
 .cbadges{display:flex;gap:5px}
-.cbadge{
-  font-family:var(--mono);font-size:9px;letter-spacing:1px;
-  padding:2px 7px;border-radius:2px;border:1px solid var(--border);
-  color:var(--textd);background:var(--bg3);
-}
+.cbadge{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:2px;border:1px solid var(--border);color:var(--textd);background:var(--bg3);}
 
 /* ══ RIGHT COLUMN ══ */
 .log-col{display:flex;flex-direction:column;gap:1px;overflow:hidden}
@@ -249,12 +210,7 @@ input[type=range]::-webkit-slider-thumb{
 .event-log::-webkit-scrollbar{width:3px}
 .event-log::-webkit-scrollbar-thumb{background:var(--textd)}
 
-.lentry{
-  display:flex;gap:7px;align-items:flex-start;
-  padding:6px 13px;border-bottom:1px solid rgba(0,200,160,.04);
-  border-left:2px solid transparent;
-  animation:ein .22s ease;
-}
+.lentry{display:flex;gap:7px;align-items:flex-start;padding:6px 13px;border-bottom:1px solid rgba(0,200,160,.04);border-left:2px solid transparent;animation:ein .22s ease;}
 @keyframes ein{from{opacity:0;transform:translateX(7px)}to{opacity:1;transform:translateX(0)}}
 .lentry.info  {border-left-color:var(--textd)}
 .lentry.low   {border-left-color:var(--green)}
@@ -283,10 +239,7 @@ input[type=range]::-webkit-slider-thumb{
 .sv{font-family:var(--mono);font-size:11px;color:var(--green)}
 
 /* ══ FOOTER ══ */
-.footer{
-  height:30px;display:flex;align-items:center;gap:20px;
-  padding:0 16px;background:var(--bg1);border-top:1px solid var(--border);flex-shrink:0;
-}
+.footer{height:30px;display:flex;align-items:center;gap:20px;padding:0 16px;background:var(--bg1);border-top:1px solid var(--border);flex-shrink:0;}
 .fi{font-family:var(--mono);font-size:9px;color:var(--textd);letter-spacing:1.5px;white-space:nowrap}
 #ws-status{transition:color .3s}
 #ws-status.conn{color:var(--green)}
@@ -295,13 +248,13 @@ input[type=range]::-webkit-slider-thumb{
 </head>
 <body>
 
-<!-- ALERT OVERLAY -->
-<div id="alert-overlay">
+<!-- ALERT OVERLAY — starts hidden, JS removes 'hidden' to show -->
+<div id="alert-overlay" class="hidden">
   <div id="alert-overlay-bg"></div>
   <div id="alert-overlay-text">
     <div class="ov-icon">⚠</div>
     <div class="ov-title">CRITICAL THREAT DETECTED</div>
-    <div class="ov-sub" id="ov-sub">Signal integrity compromised — jamming in progress</div>
+    <div class="ov-sub" id="overlay-detail">Signal integrity compromised — jamming in progress</div>
   </div>
 </div>
 
@@ -314,9 +267,10 @@ input[type=range]::-webkit-slider-thumb{
       <span class="logo-ver">v2.1.0</span>
     </div>
     <div class="tdiv"></div>
+    <!-- ID: sys-badge | inner label ID: badge-label -->
     <div class="sys-badge" id="sys-badge">
       <span class="bdot"></span>
-      <span class="blabel" id="blabel">SECURE</span>
+      <span class="blabel" id="badge-label">SECURE</span>
     </div>
   </div>
   <div class="tbc">
@@ -330,8 +284,8 @@ input[type=range]::-webkit-slider-thumb{
     </div>
   </div>
   <div class="tbr">
-    <div class="hstat"><span class="hs-l">UTC</span><span class="hs-v" id="utc">00:00:00</span></div>
-    <div class="hstat"><span class="hs-l">SESSION</span><span class="hs-v" id="sess">00:00</span></div>
+    <div class="hstat"><span class="hs-l">UTC</span><span class="hs-v" id="utc-clock">00:00:00</span></div>
+    <div class="hstat"><span class="hs-l">SESSION</span><span class="hs-v" id="session-timer">00:00</span></div>
     <div class="live-wrap"><span class="live-dot"></span><span class="live-lbl">LIVE</span></div>
   </div>
 </div>
@@ -346,39 +300,51 @@ input[type=range]::-webkit-slider-thumb{
     <div class="panel">
       <div class="ph"><span class="pl">Signal Status</span><span class="pc"></span></div>
       <div class="snr-block">
-        <canvas id="snr-cvs" width="180" height="96"></canvas>
+        <!-- ID: snr-gauge -->
+        <canvas id="snr-gauge" width="180" height="96"></canvas>
         <div class="snr-readout">
-          <span class="snr-val" id="snr-val">--</span>
+          <!-- ID: snr-value -->
+          <span class="snr-val" id="snr-value">--</span>
           <span class="snr-unit">dB SNR</span>
         </div>
       </div>
       <div class="mgrid">
         <div class="mtile">
           <div class="mlabel">Entropy</div>
-          <div class="mval" id="ent-val">0.000</div>
-          <div class="mbar-bg"><div class="mbar" id="ent-bar" style="width:0%"></div></div>
+          <!-- ID: entropy-value -->
+          <div class="mval" id="entropy-value">0.000</div>
+          <div class="mbar-bg">
+            <!-- ID: entropy-bar -->
+            <div class="mbar" id="entropy-bar" style="width:0%"></div>
+          </div>
         </div>
         <div class="mtile">
           <div class="mlabel">Frequency</div>
-          <div class="mval" id="freq-val">10 Hz</div>
-          <div class="msub" id="freq-sub">LOCKED</div>
+          <!-- ID: freq-value -->
+          <div class="mval" id="freq-value">10 Hz</div>
+          <!-- ID: freq-status -->
+          <div class="msub" id="freq-status">LOCKED</div>
         </div>
         <div class="mtile">
           <div class="mlabel">Mode</div>
-          <div class="mval" id="mode-val" style="font-size:13px;letter-spacing:1.5px">NORMAL</div>
+          <!-- ID: mode-value -->
+          <div class="mval" id="mode-value" style="font-size:13px;letter-spacing:1.5px">NORMAL</div>
         </div>
         <div class="mtile">
           <div class="mlabel">Frames/s</div>
-          <div class="mval" id="fps-val">--</div>
+          <!-- ID: fps-value -->
+          <div class="mval" id="fps-value">--</div>
         </div>
       </div>
       <div class="threat-sec">
         <div class="threat-hdr">
           <span class="pl">Threat Level</span>
-          <span class="tpct" id="tpct">0%</span>
+          <!-- ID: threat-pct -->
+          <span class="tpct" id="threat-pct">0%</span>
         </div>
         <div class="tbar-bg">
-          <div class="tbar-fill" id="tbar" style="width:0%"></div>
+          <!-- ID: threat-bar-fill -->
+          <div class="tbar-fill" id="threat-bar-fill" style="width:0%"></div>
         </div>
         <div class="tbar-labels"><span>LOW</span><span>MED</span><span>HIGH</span><span>CRIT</span></div>
       </div>
@@ -388,23 +354,32 @@ input[type=range]::-webkit-slider-thumb{
     <div class="panel ctrl-panel">
       <div class="ph"><span class="pl">Control Console</span><span class="pc"></span></div>
       <div style="padding-top:12px">
-        <button class="cbtn attack-btn" id="atk-btn">
-          <span class="cbtn-icon">◈</span><span id="atk-txt">Initiate Attack</span>
+        <!-- ID: attack-btn | inner span class: btn-text -->
+        <button class="cbtn attack-btn" id="attack-btn">
+          <span class="cbtn-icon">◈</span>
+          <span class="btn-text" id="attack-btn-text">Initiate Attack</span>
         </button>
-        <button class="cbtn defend-btn" id="def-btn" disabled>
-          <span class="cbtn-icon">⟳</span>Deploy Countermeasure
+        <!-- ID: defend-btn -->
+        <button class="cbtn defend-btn" id="defend-btn" disabled>
+          <span class="cbtn-icon">⟳</span>
+          <span class="btn-text">Deploy Countermeasure</span>
         </button>
-        <button class="cbtn reset-btn" id="rst-btn">
-          <span class="cbtn-icon">↺</span>Reset Baseline
+        <!-- ID: reset-btn -->
+        <button class="cbtn reset-btn" id="reset-btn">
+          <span class="cbtn-icon">↺</span>
+          <span class="btn-text">Reset Baseline</span>
         </button>
         <div class="slider-block">
           <div class="slider-hdr">
             <span class="slider-lbl">Noise Amplitude</span>
-            <span class="slider-val" id="noise-disp">0.5</span>
+            <!-- ID: noise-display -->
+            <span class="slider-val" id="noise-display">0.5</span>
           </div>
-          <input type="range" id="noise-sl" min="0.1" max="3.0" step="0.1" value="0.5"/>
+          <!-- ID: noise-slider -->
+          <input type="range" id="noise-slider" min="0.1" max="3.0" step="0.1" value="0.5"/>
         </div>
         <div class="hop-lbl">Hop Sequence</div>
+        <!-- ID: hop-chips -->
         <div class="hop-chips" id="hop-chips"></div>
       </div>
     </div>
@@ -412,11 +387,12 @@ input[type=range]::-webkit-slider-thumb{
     <!-- Infrastructure nodes -->
     <div class="panel" style="flex:1">
       <div class="ph"><span class="pl">Infrastructure Nodes</span><span class="pc"></span></div>
-      <div class="node-list">
-        <div class="nitem"><span class="ndot" id="nd0"></span><span class="nname">IOT-SENSOR-01</span><span class="nfreq">915 MHz</span></div>
-        <div class="nitem"><span class="ndot" id="nd1"></span><span class="nname">GRID-CTRL-A</span><span class="nfreq">433 MHz</span></div>
-        <div class="nitem"><span class="ndot" id="nd2"></span><span class="nname">SENSOR-MESH-3</span><span class="nfreq">868 MHz</span></div>
-        <div class="nitem"><span class="ndot" id="nd3"></span><span class="nname">WATER-SYS-02</span><span class="nfreq">2.4 GHz</span></div>
+      <div class="node-list" id="node-list">
+        <!-- class: node-dot (queried by JS via querySelectorAll('.node-dot')) -->
+        <div class="nitem"><span class="node-dot" data-state="ok"></span><span class="nname">IOT-SENSOR-01</span><span class="nfreq">915 MHz</span></div>
+        <div class="nitem"><span class="node-dot" data-state="ok"></span><span class="nname">GRID-CTRL-A</span><span class="nfreq">433 MHz</span></div>
+        <div class="nitem"><span class="node-dot" data-state="ok"></span><span class="nname">SENSOR-MESH-3</span><span class="nfreq">868 MHz</span></div>
+        <div class="nitem"><span class="node-dot" data-state="ok"></span><span class="nname">WATER-SYS-02</span><span class="nfreq">2.4 GHz</span></div>
       </div>
     </div>
   </div>
@@ -427,24 +403,34 @@ input[type=range]::-webkit-slider-thumb{
       <div class="ph">
         <span class="pl">Frequency Spectrum <span class="pls">— FFT Live</span></span>
         <div class="cbadges">
-          <span class="cbadge" id="fft-peak">PEAK: -- Hz</span>
-          <span class="cbadge" id="fft-floor">FLOOR: --</span>
+          <!-- ID: fft-peak-badge -->
+          <span class="cbadge" id="fft-peak-badge">PEAK: -- Hz</span>
+          <!-- ID: fft-floor-badge -->
+          <span class="cbadge" id="fft-floor-badge">FLOOR: --</span>
         </div>
         <span class="pc"></span>
       </div>
-      <div class="chart-wrap"><canvas id="fft-cvs"></canvas></div>
+      <div class="chart-wrap">
+        <!-- ID: fft-chart -->
+        <canvas id="fft-chart"></canvas>
+      </div>
       <div class="chart-axis"><span>0 Hz</span><span>25 Hz</span><span>50 Hz</span><span>75 Hz</span><span>100 Hz</span></div>
     </div>
     <div class="panel chart-panel">
       <div class="ph">
         <span class="pl">Time Domain Waveform <span class="pls">— Oscilloscope</span></span>
         <div class="cbadges">
-          <span class="cbadge" id="wav-amp">AMP: --</span>
-          <span class="cbadge" id="wav-rms">RMS: --</span>
+          <!-- ID: wave-amp-badge -->
+          <span class="cbadge" id="wave-amp-badge">AMP: --</span>
+          <!-- ID: wave-rms-badge -->
+          <span class="cbadge" id="wave-rms-badge">RMS: --</span>
         </div>
         <span class="pc"></span>
       </div>
-      <div class="chart-wrap"><canvas id="wav-cvs"></canvas></div>
+      <div class="chart-wrap">
+        <!-- ID: wave-chart -->
+        <canvas id="wave-chart"></canvas>
+      </div>
       <div class="chart-axis"><span>t-1.0s</span><span>t-0.75s</span><span>t-0.5s</span><span>t-0.25s</span><span>NOW</span></div>
     </div>
   </div>
@@ -452,21 +438,29 @@ input[type=range]::-webkit-slider-thumb{
   <!-- ── RIGHT LOG COLUMN ── -->
   <div class="log-col">
     <div class="panel log-panel">
-      <div class="ph"><span class="pl">Event Log</span><span class="log-count" id="log-count">0 events</span><span class="pc"></span></div>
+      <div class="ph">
+        <span class="pl">Event Log</span>
+        <!-- ID: log-count -->
+        <span class="log-count" id="log-count">0 events</span>
+        <span class="pc"></span>
+      </div>
+      <!-- ID: event-log -->
       <div class="event-log" id="event-log"></div>
     </div>
     <div class="panel wf-panel">
       <div class="ph"><span class="pl">Spectrum History <span class="pls">— Waterfall</span></span><span class="pc"></span></div>
-      <canvas id="wf-canvas"></canvas>
+      <!-- ID: waterfall-canvas -->
+      <canvas id="waterfall-canvas"></canvas>
     </div>
     <div class="panel stats-panel">
       <div class="ph"><span class="pl">Session Statistics</span><span class="pc"></span></div>
-      <div class="srow"><span class="sk">Alerts fired</span><span class="sv" id="s-alerts">0</span></div>
-      <div class="srow"><span class="sk">Avg SNR</span><span class="sv" id="s-snr">-- dB</span></div>
-      <div class="srow"><span class="sk">Peak entropy</span><span class="sv" id="s-ent">0.000</span></div>
-      <div class="srow"><span class="sk">Hops executed</span><span class="sv" id="s-hops">0</span></div>
-      <div class="srow"><span class="sk">Frames received</span><span class="sv" id="s-frames">0</span></div>
-      <div class="srow"><span class="sk">Uptime</span><span class="sv" id="s-uptime">00:00</span></div>
+      <!-- IDs: stat-alerts, stat-avg-snr, stat-peak-ent, stat-hops, stat-frames, stat-uptime -->
+      <div class="srow"><span class="sk">Alerts fired</span><span class="sv" id="stat-alerts">0</span></div>
+      <div class="srow"><span class="sk">Avg SNR</span><span class="sv" id="stat-avg-snr">-- dB</span></div>
+      <div class="srow"><span class="sk">Peak entropy</span><span class="sv" id="stat-peak-ent">0.000</span></div>
+      <div class="srow"><span class="sk">Hops executed</span><span class="sv" id="stat-hops">0</span></div>
+      <div class="srow"><span class="sk">Frames received</span><span class="sv" id="stat-frames">0</span></div>
+      <div class="srow"><span class="sk">Uptime</span><span class="sv" id="stat-uptime">00:00</span></div>
     </div>
   </div>
 </div>
@@ -474,16 +468,13 @@ input[type=range]::-webkit-slider-thumb{
 <!-- FOOTER -->
 <div class="footer">
   <span class="fi">SpectraShield RF-IDS | Build 2024.3</span>
+  <!-- ID: ws-status -->
   <span class="fi" id="ws-status">⬤ DEMO MODE — no backend</span>
   <span class="fi">FFT: scipy.fft (sim) | Transport: WebSocket</span>
   <span class="fi">Real-world: RTL-SDR | GNU Radio</span>
 </div>
 
 <script>
-/* ════════════════════════════════════
-   SPECTRASHIELD — Embedded JS
-   Zero external dependencies — runs as file:///
-════════════════════════════════════ */
 'use strict';
 
 // ── CONFIG ──
@@ -511,437 +502,452 @@ const S = {
   wfImgData: null,
 };
 
-// ── HELPERS ──
 const $ = id => document.getElementById(id);
 
 // ── CLOCKS ──
 function updateClocks(){
-  const n=new Date();
-  $('utc').textContent=`${pad(n.getUTCHours())}:${pad(n.getUTCMinutes())}:${pad(n.getUTCSeconds())}`;
-  const el=Math.floor((Date.now()-S.start)/1000);
-  const et=`${pad(Math.floor(el/60))}:${pad(el%60)}`;
-  $('sess').textContent=et; $('s-uptime').textContent=et;
+  const n = new Date();
+  $('utc-clock').textContent = `${pad(n.getUTCHours())}:${pad(n.getUTCMinutes())}:${pad(n.getUTCSeconds())}`;
+  const el = Math.floor((Date.now() - S.start) / 1000);
+  const et = `${pad(Math.floor(el/60))}:${pad(el%60)}`;
+  $('session-timer').textContent = et;
+  $('stat-uptime').textContent   = et;
 }
-function pad(n){return String(n).padStart(2,'0')}
-setInterval(updateClocks,1000); updateClocks();
+function pad(n){ return String(n).padStart(2,'0'); }
+setInterval(updateClocks, 1000);
+updateClocks();
 
 // ── LOG ──
-function addLog(sev,msg,met){
-  const ts=new Date().toISOString().slice(11,22);
-  S.logEntries.unshift({sev,msg,met,ts});
-  if(S.logEntries.length>100) S.logEntries.pop();
+function addLog(sev, msg, met){
+  const ts = new Date().toISOString().slice(11,22);
+  S.logEntries.unshift({sev, msg, met, ts});
+  if(S.logEntries.length > 100) S.logEntries.pop();
   renderLog();
-  $('log-count').textContent=`${S.logEntries.length} events`;
+  $('log-count').textContent = `${S.logEntries.length} events`;
 }
 function renderLog(){
-  $('event-log').innerHTML=S.logEntries.slice(0,50).map(e=>`
+  $('event-log').innerHTML = S.logEntries.slice(0,50).map(e => `
     <div class="lentry ${e.sev.toLowerCase()}">
       <span class="lts">${e.ts}</span>
       <div class="lbody">
         <div class="lsev">${e.sev}</div>
         <div class="lmsg">${e.msg}</div>
-        ${e.met?`<div class="lmet">${e.met}</div>`:''}
+        ${e.met ? `<div class="lmet">${e.met}</div>` : ''}
       </div>
     </div>`).join('');
 }
 
 // ── HOP CHIPS ──
-function renderHops(cur,jammed){
-  $('hop-chips').innerHTML=CFG.HOP_SEQ.map((f,i)=>{
-    let c='hchip';
-    if(i===cur) c+=' cur';
-    if(i===jammed) c+=' jammed';
+function renderHops(cur, jammed){
+  $('hop-chips').innerHTML = CFG.HOP_SEQ.map((f,i) => {
+    let c = 'hchip';
+    if(i === cur)    c += ' cur';
+    if(i === jammed) c += ' jammed';
     return `<span class="${c}">${f}Hz</span>`;
   }).join('');
 }
-renderHops(0,-1);
+renderHops(0, -1);
 
-// ── NODE STATES ──
-function setNodes(state){ // 'ok' | 'warn' | 'crit'
-  [0,1,2,3].forEach(i=>{
-    const d=$(`nd${i}`);
-    d.className='ndot'+(state==='warn'?' warn':state==='crit'?' crit':'');
+// ── NODE STATES ── (uses class selector .node-dot)
+function setNodes(state){
+  document.querySelectorAll('.node-dot').forEach(d => {
+    d.dataset.state = state === 'ok' ? 'ok' : state === 'warn' ? 'warning' : 'critical';
   });
 }
 
 // ── BADGE / OVERLAY ──
 function applyMode(mode){
-  S.mode=mode;
-  const badge=$('sys-badge'), lbl=$('blabel'), ov=$('alert-overlay');
-  const mv=$('mode-val');
-  badge.className='sys-badge';
-  ov.classList.remove('show');
+  S.mode = mode;
+  const badge = $('sys-badge');
+  const lbl   = $('badge-label');
+  const ov    = $('alert-overlay');
+  const mv    = $('mode-value');
+
+  badge.className = 'sys-badge';
+  ov.classList.add('hidden');
+
   switch(mode){
     case 'NORMAL':
-      lbl.textContent='SECURE'; mv.textContent='NORMAL'; mv.style.color='#00e5a0';
-      setNodes('ok'); break;
+      lbl.textContent = 'SECURE';
+      mv.textContent  = 'NORMAL';
+      mv.style.color  = '#00e5a0';
+      setNodes('ok');
+      break;
     case 'ATTACK':
-      badge.classList.add('attack'); lbl.textContent='UNDER ATTACK';
-      mv.textContent='ATTACK'; mv.style.color='#ff2d2d';
-      ov.classList.add('show'); setNodes('crit'); beep(); break;
+      badge.classList.add('attack');
+      lbl.textContent = 'UNDER ATTACK';
+      mv.textContent  = 'ATTACK';
+      mv.style.color  = '#ff2d2d';
+      ov.classList.remove('hidden');
+      setNodes('crit');
+      beep();
+      break;
     case 'HOPPING':
-      badge.classList.add('hop'); lbl.textContent='FREQ HOPPING';
-      mv.textContent='HOPPING'; mv.style.color='#00b8ff';
-      setNodes('warn'); break;
+      badge.classList.add('hop');
+      lbl.textContent = 'FREQ HOPPING';
+      mv.textContent  = 'HOPPING';
+      mv.style.color  = '#00b8ff';
+      setNodes('warn');
+      break;
     case 'RESTORED':
-      lbl.textContent='RESTORED'; mv.textContent='RESTORED'; mv.style.color='#00e5a0';
-      setNodes('ok'); break;
+      lbl.textContent = 'RESTORED';
+      mv.textContent  = 'RESTORED';
+      mv.style.color  = '#00e5a0';
+      setNodes('ok');
+      break;
   }
 }
 
 // ── WEB AUDIO ──
-let actx=null;
+let actx = null;
 function beep(){
   try{
-    if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)();
-    [[880,.06],[660,.06]].forEach(([f,g],i)=>{
-      setTimeout(()=>{
-        const o=actx.createOscillator(),gn=actx.createGain();
-        o.connect(gn);gn.connect(actx.destination);
-        o.type='square';o.frequency.value=f;
-        gn.gain.setValueAtTime(g,actx.currentTime);
-        gn.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.28);
-        o.start();o.stop(actx.currentTime+.28);
-      },i*310);
+    if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    [[880,.06],[660,.06]].forEach(([f,g],i) => {
+      setTimeout(() => {
+        const o = actx.createOscillator(), gn = actx.createGain();
+        o.connect(gn); gn.connect(actx.destination);
+        o.type = 'square'; o.frequency.value = f;
+        gn.gain.setValueAtTime(g, actx.currentTime);
+        gn.gain.exponentialRampToValueAtTime(.001, actx.currentTime + .28);
+        o.start(); o.stop(actx.currentTime + .28);
+      }, i * 310);
     });
   }catch(e){}
 }
 
 // ── CONTROLS ──
-$('atk-btn').onclick=()=>{ S.attacking?stopAttack():startAttack(); };
-$('def-btn').onclick=()=>{ deployHop(); };
-$('rst-btn').onclick=()=>{ resetSys(); };
-$('noise-sl').oninput=e=>{ S.noise=parseFloat(e.target.value); $('noise-disp').textContent=S.noise.toFixed(1); };
+$('attack-btn').onclick  = () => { S.attacking ? stopAttack()   : startAttack(); };
+$('defend-btn').onclick  = () => { deployHop(); };
+$('reset-btn').onclick   = () => { resetSys(); };
+$('noise-slider').oninput = e => {
+  S.noise = parseFloat(e.target.value);
+  $('noise-display').textContent = S.noise.toFixed(1);
+};
 
 function startAttack(){
-  S.attacking=true; S.alerts++;
-  $('atk-btn').classList.add('active');
-  $('atk-txt').textContent='Stop Attack';
-  $('def-btn').disabled=false;
+  S.attacking = true; S.alerts++;
+  $('attack-btn').classList.add('active');
+  $('attack-btn-text').textContent = 'Stop Attack';
+  $('defend-btn').disabled = false;
   applyMode('ATTACK');
-  addLog('CRITICAL','Jamming attack initiated — broadband noise injection active',`Noise: ${S.noise.toFixed(1)} | Freq: ${CFG.HOP_SEQ[S.hopIdx]}Hz`);
+  addLog('CRITICAL','Jamming attack initiated — broadband noise injection active',
+         `Noise: ${S.noise.toFixed(1)} | Freq: ${CFG.HOP_SEQ[S.hopIdx]}Hz`);
 }
 function stopAttack(){
-  S.attacking=false;
-  $('atk-btn').classList.remove('active');
-  $('atk-txt').textContent='Initiate Attack';
-  $('def-btn').disabled=true;
-  $('alert-overlay').classList.remove('show');
+  S.attacking = false;
+  $('attack-btn').classList.remove('active');
+  $('attack-btn-text').textContent = 'Initiate Attack';
+  $('defend-btn').disabled = true;
+  $('alert-overlay').classList.add('hidden');
   applyMode('NORMAL');
   addLog('INFO','Attack disabled — monitoring for residual interference');
 }
 function deployHop(){
-  S.hopping=true; S.hops++;
-  const prev=S.hopIdx;
-  S.hopIdx=(S.hopIdx+1)%CFG.HOP_SEQ.length;
-  const nf=CFG.HOP_SEQ[S.hopIdx];
+  S.hopping = true; S.hops++;
+  const prev = S.hopIdx;
+  S.hopIdx = (S.hopIdx + 1) % CFG.HOP_SEQ.length;
+  const nf = CFG.HOP_SEQ[S.hopIdx];
   applyMode('HOPPING');
-  renderHops(S.hopIdx,prev);
-  $('freq-val').textContent=`${nf} Hz`;
-  $('freq-sub').textContent='HOPPING';
-  addLog('HOP',`Frequency hopping — jumped to ${nf}Hz`,`From: ${CFG.HOP_SEQ[prev]}Hz → To: ${nf}Hz`);
-  setTimeout(()=>{
-    S.hopping=false; S.attacking=false;
-    $('atk-btn').classList.remove('active');
-    $('atk-txt').textContent='Initiate Attack';
-    $('def-btn').disabled=true;
-    $('freq-sub').textContent='LOCKED';
-    $('alert-overlay').classList.remove('show');
+  renderHops(S.hopIdx, prev);
+  $('freq-value').textContent  = `${nf} Hz`;
+  $('freq-status').textContent = 'HOPPING';
+  addLog('HOP',`Frequency hopping — jumped to ${nf}Hz`,
+         `From: ${CFG.HOP_SEQ[prev]}Hz → To: ${nf}Hz`);
+  setTimeout(() => {
+    S.hopping = false; S.attacking = false;
+    $('attack-btn').classList.remove('active');
+    $('attack-btn-text').textContent = 'Initiate Attack';
+    $('defend-btn').disabled = true;
+    $('freq-status').textContent = 'LOCKED';
+    $('alert-overlay').classList.add('hidden');
     applyMode('RESTORED');
     addLog('LOW',`Signal restored on ${nf}Hz — SNR recovering`);
-    setTimeout(()=>{ if(S.mode==='RESTORED') applyMode('NORMAL'); },3500);
-  },2600);
+    setTimeout(() => { if(S.mode === 'RESTORED') applyMode('NORMAL'); }, 3500);
+  }, 2600);
 }
 function resetSys(){
-  S.attacking=false; S.hopping=false; S.hopIdx=0;
-  $('atk-btn').classList.remove('active');
-  $('atk-txt').textContent='Initiate Attack';
-  $('def-btn').disabled=true;
-  $('alert-overlay').classList.remove('show');
-  $('freq-val').textContent=`${CFG.HOP_SEQ[0]} Hz`;
-  $('freq-sub').textContent='LOCKED';
-  renderHops(0,-1);
+  S.attacking = false; S.hopping = false; S.hopIdx = 0;
+  $('attack-btn').classList.remove('active');
+  $('attack-btn-text').textContent = 'Initiate Attack';
+  $('defend-btn').disabled = true;
+  $('alert-overlay').classList.add('hidden');
+  $('freq-value').textContent  = `${CFG.HOP_SEQ[0]} Hz`;
+  $('freq-status').textContent = 'LOCKED';
+  renderHops(0, -1);
   applyMode('NORMAL');
   addLog('INFO','System reset — recalibrating baseline');
 }
 
 // ══════════════════════════════
-// CANVAS CHARTS (no Chart.js)
+// CANVAS CHARTS
 // ══════════════════════════════
 
 // ── FFT CHART ──
-const fftCvs=$('fft-cvs'), fftCtx=fftCvs.getContext('2d');
-function resizeCvs(c){c.width=c.parentElement.clientWidth-26;c.height=c.parentElement.clientHeight-6;}
+const fftCvs = $('fft-chart'), fftCtx = fftCvs.getContext('2d');
+function resizeCvs(c){
+  const w = c.offsetWidth  || c.parentElement.clientWidth  - 26;
+  const h = c.offsetHeight || c.parentElement.clientHeight - 14;
+  if(c.width !== w)  c.width  = w;
+  if(c.height !== h) c.height = h;
+}
 
 function drawFFT(bins){
   resizeCvs(fftCvs);
-  const W=fftCvs.width,H=fftCvs.height,ctx=fftCtx;
+  const W = fftCvs.width, H = fftCvs.height, ctx = fftCtx;
   ctx.clearRect(0,0,W,H);
-  // bg
-  ctx.fillStyle='#060a0d'; ctx.fillRect(0,0,W,H);
-  // grid
-  ctx.strokeStyle='rgba(0,200,160,.06)'; ctx.lineWidth=1;
+  ctx.fillStyle = '#060a0d'; ctx.fillRect(0,0,W,H);
+  // grid lines
+  ctx.strokeStyle = 'rgba(0,200,160,.06)'; ctx.lineWidth = 1;
   for(let i=1;i<5;i++){
-    const x=i/5*W;
-    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    const x = i/5*W;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
   }
   for(let i=1;i<5;i++){
-    const y=i/5*H;
-    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    const y = i/5*H;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
   }
-  // noise floor label
-  const sorted=[...bins].sort((a,b)=>a-b);
-  const floor=sorted[Math.floor(sorted.length*.15)];
-  const floorY=H-(floor/1.4)*H;
-  ctx.strokeStyle='rgba(58,85,102,.5)'; ctx.lineWidth=1;
+  // noise floor
+  const sorted = [...bins].sort((a,b)=>a-b);
+  const floor  = sorted[Math.floor(sorted.length*.15)];
+  const floorY = H - (floor/1.4)*H;
+  ctx.strokeStyle = 'rgba(58,85,102,.5)'; ctx.lineWidth = 1;
   ctx.setLineDash([4,4]);
-  ctx.beginPath();ctx.moveTo(0,floorY);ctx.lineTo(W,floorY);ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,floorY); ctx.lineTo(W,floorY); ctx.stroke();
   ctx.setLineDash([]);
-
-  const bw=W/bins.length;
-  const attackMode=S.attacking;
-  const hopMode=S.hopping;
-
-  bins.forEach((v,i)=>{
-    const barH=Math.max(2,(v/1.4)*H);
-    const norm=v/1.4;
+  // bars
+  const bw = W / bins.length;
+  bins.forEach((v,i) => {
+    const barH = Math.max(2,(v/1.4)*H);
+    const norm = v/1.4;
     let r,g,b;
-    if(attackMode){r=255;g=Math.round(45+norm*60);b=45;}
-    else if(hopMode){r=0;g=Math.round(150+norm*80);b=255;}
-    else{r=0;g=Math.round(180+norm*49);b=Math.round(140+norm*20);}
-    ctx.fillStyle=`rgba(${r},${g},${b},${0.35+norm*.6})`;
-    ctx.fillRect(i*bw,H-barH,bw-1,barH);
+    if(S.attacking){ r=255; g=Math.round(45+norm*60); b=45; }
+    else if(S.hopping){ r=0; g=Math.round(150+norm*80); b=255; }
+    else{ r=0; g=Math.round(180+norm*49); b=Math.round(140+norm*20); }
+    ctx.fillStyle = `rgba(${r},${g},${b},${0.35+norm*.6})`;
+    ctx.fillRect(i*bw, H-barH, bw-1, barH);
   });
-
-  // update badges
-  const peak=Math.max(...bins);
-  const pidx=bins.indexOf(peak);
-  const phz=Math.round(pidx/bins.length*100);
-  $('fft-peak').textContent=`PEAK: ${phz} Hz`;
-  $('fft-floor').textContent=`FLOOR: ${floor.toFixed(3)}`;
+  // badges
+  const peak = Math.max(...bins);
+  const pidx = bins.indexOf(peak);
+  const phz  = Math.round(pidx/bins.length*100);
+  $('fft-peak-badge').textContent  = `PEAK: ${phz} Hz`;
+  $('fft-floor-badge').textContent = `FLOOR: ${floor.toFixed(3)}`;
 }
 
 // ── WAVEFORM CHART ──
-const wavCvs=$('wav-cvs'), wavCtx=wavCvs.getContext('2d');
-
+const wavCvs = $('wave-chart'), wavCtx = wavCvs.getContext('2d');
 function drawWave(data){
   resizeCvs(wavCvs);
-  const W=wavCvs.width,H=wavCvs.height,ctx=wavCtx;
+  const W = wavCvs.width, H = wavCvs.height, ctx = wavCtx;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#060a0d'; ctx.fillRect(0,0,W,H);
-  // grid
-  ctx.strokeStyle='rgba(0,200,160,.06)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  ctx.fillStyle = '#060a0d'; ctx.fillRect(0,0,W,H);
+  // centre line
+  ctx.strokeStyle = 'rgba(0,200,160,.06)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
   for(let i=1;i<5;i++){
-    const x=i/5*W;
-    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    const x = i/5*W;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
   }
-  // waveform
-  const col=S.attacking?'#ff5555':S.hopping?'#00b8ff':'#00e5a0';
-  ctx.strokeStyle=col; ctx.lineWidth=1.5;
-  ctx.shadowColor=col; ctx.shadowBlur=4;
+  // signal
+  const col = S.attacking ? '#ff5555' : S.hopping ? '#00b8ff' : '#00e5a0';
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+  ctx.shadowColor = col; ctx.shadowBlur = 4;
   ctx.beginPath();
-  const step=W/data.length;
-  data.forEach((v,i)=>{
-    const y=H/2 - (v/1.8)*H/2;
-    i===0?ctx.moveTo(0,y):ctx.lineTo(i*step,y);
+  const step = W / data.length;
+  data.forEach((v,i) => {
+    const y = H/2 - (v/1.8)*(H/2);
+    i === 0 ? ctx.moveTo(0,y) : ctx.lineTo(i*step,y);
   });
-  ctx.stroke();
-  ctx.shadowBlur=0;
-
-  const amp=Math.max(...data.map(Math.abs));
-  const rms=Math.sqrt(data.reduce((s,v)=>s+v*v,0)/data.length);
-  $('wav-amp').textContent=`AMP: ${amp.toFixed(3)}`;
-  $('wav-rms').textContent=`RMS: ${rms.toFixed(3)}`;
+  ctx.stroke(); ctx.shadowBlur = 0;
+  const amp = Math.max(...data.map(Math.abs));
+  const rms = Math.sqrt(data.reduce((s,v)=>s+v*v,0)/data.length);
+  $('wave-amp-badge').textContent = `AMP: ${amp.toFixed(3)}`;
+  $('wave-rms-badge').textContent = `RMS: ${rms.toFixed(3)}`;
 }
 
 // ── SNR GAUGE ──
-const snrCvs=$('snr-cvs'), snrCtx=snrCvs.getContext('2d');
+const snrCvs = $('snr-gauge'), snrCtx = snrCvs.getContext('2d');
 function drawSNR(snr){
-  const W=snrCvs.width,H=snrCvs.height,ctx=snrCtx;
-  const cx=W/2,cy=H-12,r=Math.min(cx,cy+12)-7;
+  const W = snrCvs.width, H = snrCvs.height, ctx = snrCtx;
+  const cx = W/2, cy = H-12, r = Math.min(cx, cy+12)-7;
   ctx.clearRect(0,0,W,H);
   // track
-  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,2*Math.PI);
-  ctx.strokeStyle='rgba(0,200,160,.08)';ctx.lineWidth=9;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,2*Math.PI);
+  ctx.strokeStyle = 'rgba(0,200,160,.08)'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.stroke();
   // fill
-  const norm=Math.min(1,Math.max(0,snr/CFG.SNR_MAX));
-  const grd=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
-  grd.addColorStop(0,'#ff2d2d');grd.addColorStop(.5,'#ffb700');grd.addColorStop(1,'#00e5a0');
-  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,Math.PI+norm*Math.PI);
-  ctx.strokeStyle=grd;ctx.lineWidth=9;ctx.lineCap='round';
-  const col=snr<5?'#ff2d2d':snr<12?'#ffb700':'#00e5a0';
-  ctx.shadowColor=col;ctx.shadowBlur=10;ctx.stroke();ctx.shadowBlur=0;
+  const norm = Math.min(1, Math.max(0, snr/CFG.SNR_MAX));
+  const grd  = ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+  grd.addColorStop(0,'#ff2d2d'); grd.addColorStop(.5,'#ffb700'); grd.addColorStop(1,'#00e5a0');
+  ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,Math.PI+norm*Math.PI);
+  ctx.strokeStyle = grd; ctx.lineWidth = 9; ctx.lineCap = 'round';
+  const col = snr<5?'#ff2d2d':snr<12?'#ffb700':'#00e5a0';
+  ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.stroke(); ctx.shadowBlur = 0;
   // ticks
-  ctx.strokeStyle='rgba(0,200,160,.15)';ctx.lineWidth=1;
+  ctx.strokeStyle = 'rgba(0,200,160,.15)'; ctx.lineWidth = 1;
   for(let i=0;i<=6;i++){
-    const a=Math.PI+(i/6)*Math.PI;
+    const a = Math.PI+(i/6)*Math.PI;
     ctx.beginPath();
-    ctx.moveTo(cx+(r-7)*Math.cos(a),cy+(r-7)*Math.sin(a));
-    ctx.lineTo(cx+(r+1)*Math.cos(a),cy+(r+1)*Math.sin(a));
+    ctx.moveTo(cx+(r-7)*Math.cos(a), cy+(r-7)*Math.sin(a));
+    ctx.lineTo(cx+(r+1)*Math.cos(a), cy+(r+1)*Math.sin(a));
     ctx.stroke();
   }
-  // tick labels
-  ctx.fillStyle='#3a5566';ctx.font='8px "Courier New"';
-  ctx.textAlign='left';ctx.fillText('0',cx-r-2,cy+12);
-  ctx.textAlign='right';ctx.fillText(`${CFG.SNR_MAX}`,cx+r+2,cy+12);
+  // labels
+  ctx.fillStyle = '#3a5566'; ctx.font = '8px "Courier New"';
+  ctx.textAlign = 'left';  ctx.fillText('0', cx-r-2, cy+12);
+  ctx.textAlign = 'right'; ctx.fillText(`${CFG.SNR_MAX}`, cx+r+2, cy+12);
 }
 
 // ── WATERFALL ──
-const wfCvs=$('wf-canvas'), wfCtx=wfCvs.getContext('2d');
+const wfCvs = $('waterfall-canvas'), wfCtx = wfCvs.getContext('2d');
 function drawWaterfall(bins){
-  const W=wfCvs.offsetWidth||240;
-  wfCvs.width=W; wfCvs.height=160;
-  if(!S.wfImgData||S.wfImgData.width!==W){
-    S.wfImgData=wfCtx.createImageData(W,CFG.WF_ROWS);
+  const W = wfCvs.offsetWidth || 240;
+  wfCvs.width = W; wfCvs.height = 160;
+  if(!S.wfImgData || S.wfImgData.width !== W){
+    S.wfImgData = wfCtx.createImageData(W, CFG.WF_ROWS);
     S.wfImgData.data.fill(0);
-    for(let i=3;i<S.wfImgData.data.length;i+=4) S.wfImgData.data[i]=255;
+    for(let i=3; i<S.wfImgData.data.length; i+=4) S.wfImgData.data[i] = 255;
   }
-  // scroll
-  const rB=W*4,d=S.wfImgData.data;
-  for(let row=CFG.WF_ROWS-1;row>0;row--) d.copyWithin(row*rB,(row-1)*rB,(row-1)*rB+rB);
-  // new row
-  for(let x=0;x<W;x++){
-    const bi=Math.floor(x/W*bins.length);
-    const v=Math.min(1,bins[bi]||0);
-    const [r,g,b]=thermColor(v);
-    const i=x*4;
-    d[i]=r;d[i+1]=g;d[i+2]=b;
+  const rB = W*4, d = S.wfImgData.data;
+  for(let row=CFG.WF_ROWS-1; row>0; row--) d.copyWithin(row*rB, (row-1)*rB, (row-1)*rB+rB);
+  for(let x=0; x<W; x++){
+    const bi = Math.floor(x/W*bins.length);
+    const v  = Math.min(1, bins[bi]||0);
+    const [r,g,b] = thermColor(v);
+    const i = x*4;
+    d[i]=r; d[i+1]=g; d[i+2]=b;
   }
-  wfCtx.putImageData(S.wfImgData,0,0);
-  wfCtx.drawImage(wfCvs,0,0,W,CFG.WF_ROWS,0,0,W,160);
+  wfCtx.putImageData(S.wfImgData, 0, 0);
+  wfCtx.drawImage(wfCvs, 0,0,W,CFG.WF_ROWS, 0,0,W,160);
 }
 function thermColor(v){
-  if(v<.25){const t=v/.25;return[0,0,Math.round(t*200)];}
-  if(v<.5) {const t=(v-.25)/.25;return[0,Math.round(t*220),Math.round(200*(1-t))];}
-  if(v<.75){const t=(v-.5)/.25;return[Math.round(t*255),220,0];}
-  const t=(v-.75)/.25;return[255,Math.round(220*(1-t)),0];
+  if(v<.25){ const t=v/.25;   return [0,0,Math.round(t*200)]; }
+  if(v<.5){  const t=(v-.25)/.25; return [0,Math.round(t*220),Math.round(200*(1-t))]; }
+  if(v<.75){ const t=(v-.5)/.25;  return [Math.round(t*255),220,0]; }
+  const t=(v-.75)/.25; return [255,Math.round(220*(1-t)),0];
 }
 
 // ══════════════════════════════
 // DEMO SIGNAL ENGINE
 // ══════════════════════════════
 function genFrame(){
-  S.t+=0.055;
-  const t=S.t, noiseA=S.attacking?S.noise:0.04;
-  const N=128;
-  const td=Array.from({length:N},(_,i)=>{
-    const clean=Math.sin(2*Math.PI*10*(i/N)+t);
-    const noise=(Math.random()-.5)*2*noiseA;
+  S.t += 0.055;
+  const t = S.t, noiseA = S.attacking ? S.noise : 0.04;
+  const N = 128;
+  const td = Array.from({length:N}, (_,i) => {
+    const clean = Math.sin(2*Math.PI*10*(i/N)+t);
+    const noise = (Math.random()-.5)*2*noiseA;
     return clean+noise;
   });
-
-  // Simple DFT (64 bins) — real FFT approximation
-  const fft=Array.from({length:CFG.FFT_BINS},(_,k)=>{
+  const fft = Array.from({length:CFG.FFT_BINS}, (_,k) => {
     let re=0,im=0;
-    const s=Math.floor(N/CFG.FFT_BINS);
-    for(let n=0;n<N;n+=s){
-      const a=2*Math.PI*k*n/N;
-      re+=td[n]*Math.cos(a);
-      im-=td[n]*Math.sin(a);
+    const s = Math.floor(N/CFG.FFT_BINS);
+    for(let n=0; n<N; n+=s){
+      const a = 2*Math.PI*k*n/N;
+      re += td[n]*Math.cos(a);
+      im -= td[n]*Math.sin(a);
     }
     return Math.sqrt(re*re+im*im)/(N/s);
   });
-
-  // SNR
-  const sigBin=Math.round(10/(500/CFG.FFT_BINS));
-  const peak=fft[Math.max(0,sigBin)]||0;
-  const noisePow=fft.reduce((s,v,i)=>Math.abs(i-sigBin)>2?s+v*v:s,0)/(CFG.FFT_BINS-5);
-  let snr=noisePow>0?Math.min(30,Math.max(-3,10*Math.log10((peak*peak)/(noisePow+1e-9)))):26;
-  if(S.attacking) snr=Math.max(0,snr-16+Math.random()*3);
-  else snr=Math.min(27,snr+4);
-
-  // Entropy
-  const tot=fft.reduce((a,b)=>a+b,0)+1e-9;
-  const ent=-fft.map(v=>v/tot).reduce((s,p)=>p>0?s+p*Math.log(p):s,0)/Math.log(CFG.FFT_BINS);
-  const entAdj=S.attacking?Math.min(.96,ent+.42):ent;
-
-  return{td,fft,snr,ent:entAdj,freq:CFG.HOP_SEQ[S.hopIdx]};
+  const sigBin  = Math.round(10/(500/CFG.FFT_BINS));
+  const peak    = fft[Math.max(0,sigBin)] || 0;
+  const noisePow = fft.reduce((s,v,i) => Math.abs(i-sigBin)>2 ? s+v*v : s, 0)/(CFG.FFT_BINS-5);
+  let snr = noisePow>0 ? Math.min(30,Math.max(-3,10*Math.log10((peak*peak)/(noisePow+1e-9)))) : 26;
+  if(S.attacking) snr = Math.max(0, snr-16+Math.random()*3);
+  else snr = Math.min(27, snr+4);
+  const tot = fft.reduce((a,b)=>a+b,0)+1e-9;
+  const ent = -fft.map(v=>v/tot).reduce((s,p)=>p>0?s+p*Math.log(p):s,0)/Math.log(CFG.FFT_BINS);
+  const entAdj = S.attacking ? Math.min(.96,ent+.42) : ent;
+  return {td, fft, snr, ent:entAdj, freq:CFG.HOP_SEQ[S.hopIdx]};
 }
 
 // ══════════════════════════════
 // DISPLAY UPDATE
 // ══════════════════════════════
 function update(fr){
-  const {td,fft,snr,ent,freq}=fr;
+  const {td,fft,snr,ent,freq} = fr;
 
   // SNR
-  const snrR=+snr.toFixed(1);
-  const snrEl=$('snr-val');
-  snrEl.textContent=snrR;
-  snrEl.style.color=snrR<5?'#ff2d2d':snrR<12?'#ffb700':'#00e5a0';
-  snrEl.style.textShadow=snrR<5?'0 0 20px rgba(255,45,45,.6)':'0 0 18px rgba(0,229,160,.5)';
+  const snrR = +snr.toFixed(1);
+  const snrEl = $('snr-value');
+  snrEl.textContent = snrR;
+  snrEl.style.color = snrR<5?'#ff2d2d':snrR<12?'#ffb700':'#00e5a0';
+  snrEl.style.textShadow = snrR<5?'0 0 20px rgba(255,45,45,.6)':'0 0 18px rgba(0,229,160,.5)';
   drawSNR(snrR);
   S.snrHist.push(snrR); if(S.snrHist.length>200) S.snrHist.shift();
 
   // Entropy
-  $('ent-val').textContent=ent.toFixed(3);
-  $('ent-bar').style.width=`${Math.min(100,ent*100)}%`;
-  $('ent-bar').style.background=ent>.65?'#ff2d2d':ent>.4?'#ffb700':'#00e5a0';
-  if(ent>S.peakEnt) S.peakEnt=ent;
+  $('entropy-value').textContent = ent.toFixed(3);
+  $('entropy-bar').style.width      = `${Math.min(100,ent*100)}%`;
+  $('entropy-bar').style.background = ent>.65?'#ff2d2d':ent>.4?'#ffb700':'#00e5a0';
+  if(ent > S.peakEnt) S.peakEnt = ent;
 
   // Threat
-  const th=Math.min(100,Math.round((Math.max(0,1-snrR/CFG.SNR_MAX)*.6+Math.min(1,ent)*.4)*100));
-  $('tbar').style.width=`${th}%`;
-  $('tpct').textContent=`${th}%`;
-  $('tpct').style.color=th>70?'#ff2d2d':th>40?'#ffb700':'#00e5a0';
+  const th = Math.min(100,Math.round((Math.max(0,1-snrR/CFG.SNR_MAX)*.6+Math.min(1,ent)*.4)*100));
+  $('threat-bar-fill').style.width = `${th}%`;
+  $('threat-pct').textContent      = `${th}%`;
+  $('threat-pct').style.color      = th>70?'#ff2d2d':th>40?'#ffb700':'#00e5a0';
+
+  // Frequency display
+  $('freq-value').textContent = `${freq} Hz`;
 
   // Auto-detect anomaly
-  if(snrR<10&&ent>.65&&S.mode==='NORMAL'&&!S.attacking){
+  if(snrR<10 && ent>.65 && S.mode==='NORMAL' && !S.attacking){
     applyMode('ATTACK'); S.alerts++;
-    addLog('CRITICAL','Anomaly auto-detected — SNR collapsed + entropy spike',`SNR: ${snrR}dB | Entropy: ${ent.toFixed(3)}`);
+    addLog('CRITICAL','Anomaly auto-detected — SNR collapsed + entropy spike',
+           `SNR: ${snrR}dB | Entropy: ${ent.toFixed(3)}`);
   }
 
   // Charts
   drawFFT(fft);
   S.waveData.push(td[td.length-1]);
-  if(S.waveData.length>CFG.WAVE_PTS) S.waveData.shift();
+  if(S.waveData.length > CFG.WAVE_PTS) S.waveData.shift();
   drawWave(S.waveData);
   drawWaterfall(fft);
 
   // Stats
   S.frames++;
-  const avgS=S.snrHist.length?(S.snrHist.reduce((a,b)=>a+b)/S.snrHist.length).toFixed(1):'--';
-  $('s-alerts').textContent=S.alerts;
-  $('s-snr').textContent=`${avgS} dB`;
-  $('s-ent').textContent=S.peakEnt.toFixed(3);
-  $('s-hops').textContent=S.hops;
-  $('s-frames').textContent=S.frames.toLocaleString();
+  const avgS = S.snrHist.length
+    ? (S.snrHist.reduce((a,b)=>a+b) / S.snrHist.length).toFixed(1)
+    : '--';
+  $('stat-alerts').textContent  = S.alerts;
+  $('stat-avg-snr').textContent = `${avgS} dB`;
+  $('stat-peak-ent').textContent= S.peakEnt.toFixed(3);
+  $('stat-hops').textContent    = S.hops;
+  $('stat-frames').textContent  = S.frames.toLocaleString();
 
   // FPS
-  const now=performance.now();
-  const fps=Math.round(1000/(now-S.lastFt));
-  S.lastFt=now;
-  $('fps-val').textContent=fps;
+  const now = performance.now();
+  $('fps-value').textContent = Math.round(1000/(now-S.lastFt));
+  S.lastFt = now;
 }
 
 // ══════════════════════════════
-// WEBSOCKET (optional backend)
+// WEBSOCKET / DEMO
 // ══════════════════════════════
-let socket=null,demoTimer=null;
+let socket = null, demoTimer = null;
 
 function startDemo(){
-  $('ws-status').textContent='⬤ DEMO MODE — open file works!';
-  $('ws-status').className='fi disc';
-  demoTimer=setInterval(()=>update(genFrame()),1000/CFG.DEMO_FPS);
+  $('ws-status').textContent = '⬤ DEMO MODE — no backend';
+  $('ws-status').className   = 'fi disc';
+  demoTimer = setInterval(() => update(genFrame()), 1000/CFG.DEMO_FPS);
 }
 
 function tryBackend(){
-  // Only try if SocketIO is available (loaded via backend's CDN)
-  if(typeof io==='undefined'){startDemo();return;}
+  if(typeof io === 'undefined'){ startDemo(); return; }
   try{
-    socket=io(CFG.BACKEND,{transports:['websocket'],timeout:3000,reconnectionAttempts:3});
-    socket.on('connect',()=>{
-      $('ws-status').textContent='⬤ BACKEND: CONNECTED';
-      $('ws-status').className='fi conn';
+    socket = io(CFG.BACKEND, {transports:['websocket'],timeout:3000,reconnectionAttempts:3});
+    socket.on('connect', () => {
+      $('ws-status').textContent = '⬤ BACKEND: CONNECTED';
+      $('ws-status').className   = 'fi conn';
       clearInterval(demoTimer);
       addLog('INFO','WebSocket connected to Flask-SocketIO backend');
     });
-    socket.on('signal_data',d=>update(d));
-    socket.on('connect_error',()=>startDemo());
-    socket.on('disconnect',()=>startDemo());
-    socket.on('alert',d=>addLog(d.severity||'MEDIUM',d.message,d.metrics));
-  }catch(e){startDemo();}
+    socket.on('signal_data', d => update(d));
+    socket.on('connect_error', () => startDemo());
+    socket.on('disconnect',   () => startDemo());
+    socket.on('alert', d => addLog(d.severity||'MEDIUM', d.message, d.metrics));
+  }catch(e){ startDemo(); }
 }
 
 // ── BOOT ──
@@ -950,7 +956,7 @@ function tryBackend(){
   addLog('INFO','SpectraShield RF-IDS initializing…');
   addLog('INFO','FFT engine ready — 64-bin resolution');
   addLog('INFO','Baseline spectral fingerprint recording…');
-  setTimeout(()=>addLog('LOW','Baseline calibrated — monitoring active'),900);
+  setTimeout(() => addLog('LOW','Baseline calibrated — monitoring active'), 900);
   tryBackend();
 })();
 </script>
