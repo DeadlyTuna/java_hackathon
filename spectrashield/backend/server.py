@@ -23,7 +23,7 @@ socketio = SocketIO(
 )
 
 engine       = SignalEngine()
-BROADCAST_HZ = 8   # 8 frames per second — smooth but not heavy
+BROADCAST_HZ = 20  # 20 frames per second — smooth but not heavy
 
 # ─────────────────────────────────────────
 #  FRONTEND SERVING
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     print("║       SPECTRASHIELD  SERVER              ║")
     print(f"║  Frontend : {os.path.abspath(FRONTEND_DIR)[:30]}")
     print("║  URL      : http://localhost:5000        ║")
-    print("║  Stream   : 8 fps                        ║")
+    print("║  Stream   : 20 fps                        ║")
     print("╚══════════════════════════════════════════╝")
     print()
 

@@ -1,90 +1,74 @@
-/* ═══════════════════════════════════════════════════════
-   SPECTRASHIELD — dashboard.js  (fixed)
-   ═══════════════════════════════════════════════════════ */
+console.log('FIXED DASHBOARD v3 — correct FFT freq mapping');
 'use strict';
 
-// ══════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════
-const CFG = {
-  BACKEND_URL:     'http://localhost:5000',
-  MAX_LOG_EVENTS:  120,
-  WAVEFORM_POINTS: 300,    // show 300 samples = 0.3s of signal
-  WATERFALL_ROWS:  60,
-  // Show 0–30 Hz only — signal is at 10 Hz, this keeps the spike large and visible
-  FFT_MAX_HZ:      30,
-  SNR_MAX:         30,
-  HOP_SEQUENCE:    [10, 14, 8, 17, 11, 19, 7, 13, 16, 9],
-  DEMO_MODE:       false,
-};
+const BACKEND = 'http://localhost:5000';
 
-// ══════════════════════════════════════
-// STATE
-// ══════════════════════════════════════
-const STATE = {
-  mode:          'NORMAL',
-  attackActive:  false,
-  hopActive:     false,
-  frameCount:    0,
-  alertCount:    0,
-  hopCount:      0,
-  snrHistory:    [],
-  peakEntropy:   0,
-  sessionStart:  Date.now(),
-  _lastEventTs:  null,
-};
+let attacking     = false;
+let hopping       = false;
+let frameCount    = 0;
+let alertCount    = 0;
+let hopCount      = 0;
+let snrHistory    = [];
+let peakEntropy   = 0;
+let sessionStart  = Date.now();
+let prevAlertActive = false;
 
-// ══════════════════════════════════════
-// DOM REFS
-// ══════════════════════════════════════
 const $ = id => document.getElementById(id);
-const DOM = {
-  badge:         $('system-badge'),
-  badgeLabel:    $('badge-label'),
-  alertOverlay:  $('alert-overlay'),
-  overlayDetail: $('overlay-detail'),
-  snrValue:      $('snr-value'),
-  entropyValue:  $('entropy-value'),
-  entropyBar:    $('entropy-bar'),
-  freqValue:     $('freq-value'),
-  freqStatus:    $('freq-status'),
-  modeValue:     $('mode-value'),
-  fpsValue:      $('fps-value'),
-  threatPct:     $('threat-pct'),
-  threatFill:    $('threat-bar-fill'),
-  attackBtn:     $('attack-btn'),
-  defendBtn:     $('defend-btn'),
-  resetBtn:      $('reset-btn'),
-  noiseSlider:   $('noise-slider'),
-  noiseDisplay:  $('noise-display'),
-  hopChips:      $('hop-chips'),
-  eventLog:      $('event-log'),
-  logCount:      $('log-count'),
-  fftPeakBadge:  $('fft-peak-badge'),
-  fftFloorBadge: $('fft-floor-badge'),
-  waveAmpBadge:  $('wave-amp-badge'),
-  waveRmsBadge:  $('wave-rms-badge'),
-  wsStatus:      $('ws-status'),
-  utcClock:      $('utc-clock'),
-  sessionTimer:  $('session-timer'),
-  statAlerts:    $('stat-alerts'),
-  statAvgSnr:    $('stat-avg-snr'),
-  statPeakEnt:   $('stat-peak-ent'),
-  statHops:      $('stat-hops'),
-  statFrames:    $('stat-frames'),
-  statUptime:    $('stat-uptime'),
-  nodeList:      $('node-list'),
-};
 
-// ══════════════════════════════════════
-// FFT CHART
-// Key fix: only show 0–30 Hz so the 10 Hz spike fills the chart
-// Y max = 1.5 for clean, 3.5 for attack
-// ══════════════════════════════════════
-const FFT_CTX = $('fft-chart').getContext('2d');
+// ── Clock ────────────────────────────────────────────────
+setInterval(() => {
+  const e  = Math.floor((Date.now() - sessionStart) / 1000);
+  const up = `${String(Math.floor(e/60)).padStart(2,'0')}:${String(e%60).padStart(2,'0')}`;
+  const utcEl = $('utc-clock');     if (utcEl)  utcEl.textContent  = new Date().toUTCString().slice(17,25);
+  const stEl  = $('session-timer'); if (stEl)   stEl.textContent   = up;
+  const suEl  = $('stat-uptime');   if (suEl)   suEl.textContent   = up;
+}, 1000);
 
-// Placeholder labels — replaced with real Hz values on first data frame
-const fftChart = new Chart(FFT_CTX, {
+// ── Event log ────────────────────────────────────────────
+function log(severity, msg) {
+  const el = $('event-log'); if (!el) return;
+  const ts = new Date().toISOString().slice(11,22);
+  const d  = document.createElement('div');
+  d.className = `log-entry severity-${(severity||'info').toLowerCase()}`;
+  d.innerHTML = `<span class="log-ts">${ts}</span>
+    <div class="log-body">
+      <div class="log-sev">${severity}</div>
+      <div class="log-msg">${msg}</div>
+    </div>`;
+  el.prepend(d);
+  while (el.children.length > 80) el.removeChild(el.lastChild);
+  const lc = $('log-count'); if (lc) lc.textContent = `${el.children.length} events`;
+}
+
+// ── SNR Gauge ────────────────────────────────────────────
+const snrCanvas = $('snr-gauge');
+const snrCtx    = snrCanvas ? snrCanvas.getContext('2d') : null;
+
+function drawGauge(snr) {
+  if (!snrCtx) return;
+  const W = snrCanvas.width, H = snrCanvas.height;
+  const cx = W/2, cy = H - 14, r = Math.min(cx, cy+14) - 8;
+  snrCtx.clearRect(0,0,W,H);
+  const norm = Math.min(1, Math.max(0, snr / 30));
+  snrCtx.beginPath();
+  snrCtx.arc(cx,cy,r,Math.PI,2*Math.PI);
+  snrCtx.strokeStyle = 'rgba(0,200,160,0.08)';
+  snrCtx.lineWidth = 10; snrCtx.lineCap = 'round'; snrCtx.stroke();
+  const g = snrCtx.createLinearGradient(cx-r,cy,cx+r,cy);
+  g.addColorStop(0,'#ff2d2d'); g.addColorStop(0.5,'#ffb700'); g.addColorStop(1,'#00e5a0');
+  snrCtx.beginPath();
+  snrCtx.arc(cx,cy,r,Math.PI,Math.PI + norm*Math.PI);
+  snrCtx.strokeStyle = g; snrCtx.lineWidth = 10; snrCtx.lineCap = 'round'; snrCtx.stroke();
+}
+drawGauge(0);
+
+// ════════════════════════════════════════════════════════
+//  FFT CHART
+//  FIX: use actual fft_frequencies as labels (0-25 Hz slice)
+//  so the 10 Hz spike appears in the correct position.
+// ════════════════════════════════════════════════════════
+const fftCtx = $('fft-chart').getContext('2d');
+const fftChart = new Chart(fftCtx, {
   type: 'bar',
   data: {
     labels: [],
@@ -92,32 +76,24 @@ const fftChart = new Chart(FFT_CTX, {
       {
         label: 'Magnitude',
         data: [],
-        backgroundColor: ctx => {
-          const v   = ctx.dataset.data[ctx.dataIndex] || 0;
-          const norm = Math.min(1, v / 1.0);
-          if (STATE.attackActive)
-            return `rgba(255,${Math.round(45 + norm * 60)},45,${0.5 + norm * 0.5})`;
-          if (STATE.hopActive)
-            return `rgba(0,${Math.round(150 + norm * 80)},255,${0.5 + norm * 0.5})`;
-          return `rgba(0,${Math.round(180 + norm * 49)},${Math.round(120 + norm * 20)},${0.5 + norm * 0.5})`;
-        },
+        backgroundColor: [],
         borderColor: 'transparent',
         borderWidth: 0,
-        barPercentage: 1.0,
+        barPercentage: 0.95,
         categoryPercentage: 1.0,
       },
       {
-        label: 'Noise Floor',
+        label: 'Floor',
         data: [],
         type: 'line',
-        borderColor: 'rgba(58,85,102,0.7)',
+        borderColor: 'rgba(80,120,100,0.55)',
         borderWidth: 1,
-        borderDash: [4, 4],
+        borderDash: [3,4],
         pointRadius: 0,
         fill: false,
         tension: 0,
-      },
-    ],
+      }
+    ]
   },
   options: {
     responsive: true,
@@ -130,53 +106,51 @@ const fftChart = new Chart(FFT_CTX, {
         grid: { display: false },
         ticks: {
           color: '#3a5566',
-          font: { family: 'Share Tech Mono', size: 9 },
-          maxTicksLimit: 8,
+          font: { family: 'Courier New', size: 9 },
+          maxTicksLimit: 14,
+          maxRotation: 0,
           callback: function(val, idx) {
-            // Show Hz label every ~5 bins
-            const label = this.getLabelForValue(val);
-            return label + ' Hz';
-          },
-        },
+            return this.getLabelForValue(val) + ' Hz';
+          }
+        }
       },
       y: {
         min: 0,
-        max: 1.5,   // signal peak is ~1.0 with SIGNAL_AMP=1.0
-        grid: { color: 'rgba(0,200,160,0.06)', lineWidth: 1 },
+        max: 1.5,
+        border: { display: false },
+        grid: { color: 'rgba(0,200,160,0.06)' },
         ticks: {
           color: '#3a5566',
-          font: { family: 'Share Tech Mono', size: 9 },
-          maxTicksLimit: 6,
-          callback: v => v.toFixed(1),
-        },
-        border: { display: false },
-      },
-    },
-  },
+          font: { family: 'Courier New', size: 9 },
+          maxTicksLimit: 5,
+          callback: v => v.toFixed(1)
+        }
+      }
+    }
+  }
 });
 
-// ══════════════════════════════════════
-// WAVEFORM CHART
-// Shows a scrolling oscilloscope view
-// Y range -3 to +3 covers clean signal (±1) and light noise
-// Attack mode auto-expands to ±5
-// ══════════════════════════════════════
-const WAVE_CTX   = $('wave-chart').getContext('2d');
-const waveBuffer = new Array(CFG.WAVEFORM_POINTS).fill(0);
+// ════════════════════════════════════════════════════════
+//  WAVEFORM CHART
+//  FIX: push ALL time_domain samples each frame into the
+//  rolling buffer so the oscilloscope shows real sine shape.
+// ════════════════════════════════════════════════════════
+const WAVE_BUF_SIZE = 500;
+const waveBuf = new Array(WAVE_BUF_SIZE).fill(0);
 
-const waveChart = new Chart(WAVE_CTX, {
+const waveCtx = $('wave-chart').getContext('2d');
+const waveChart = new Chart(waveCtx, {
   type: 'line',
   data: {
-    labels: new Array(CFG.WAVEFORM_POINTS).fill(''),
+    labels: new Array(WAVE_BUF_SIZE).fill(''),
     datasets: [{
-      label: 'Signal',
-      data: [...waveBuffer],
+      data: [...waveBuf],
       borderColor: '#00e5a0',
-      borderWidth: 2,
+      borderWidth: 1.5,
       pointRadius: 0,
       tension: 0.2,
       fill: false,
-    }],
+    }]
   },
   options: {
     responsive: true,
@@ -184,408 +158,283 @@ const waveChart = new Chart(WAVE_CTX, {
     animation: false,
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
     scales: {
-      x: { display: false, grid: { display: false } },
+      x: { display: false },
       y: {
-        min: -3,
-        max:  3,
-        grid: { color: 'rgba(0,200,160,0.08)', lineWidth: 1 },
+        min: -1.8, max: 1.8,
+        border: { display: false },
+        grid: { color: 'rgba(0,200,160,0.07)' },
         ticks: {
           color: '#3a5566',
-          font: { family: 'Share Tech Mono', size: 9 },
-          maxTicksLimit: 7,
-          callback: v => v.toFixed(1),
-        },
-        border: { display: false },
-      },
-    },
-  },
+          font: { family: 'Courier New', size: 9 },
+          maxTicksLimit: 5,
+          callback: v => v.toFixed(1)
+        }
+      }
+    }
+  }
 });
 
-// ══════════════════════════════════════
-// SNR GAUGE
-// ══════════════════════════════════════
-const SNR_CVS  = $('snr-gauge');
-const SNR_CTX2 = SNR_CVS.getContext('2d');
+// ── Waterfall ────────────────────────────────────────────
+const wfCanvas = $('waterfall-canvas');
+const wfCtx    = wfCanvas ? wfCanvas.getContext('2d') : null;
 
-function drawSNRGauge(snr) {
-  const W = SNR_CVS.width, H = SNR_CVS.height;
-  const cx = W / 2, cy = H - 14;
-  const r  = Math.min(cx, cy + 14) - 8;
-  SNR_CTX2.clearRect(0, 0, W, H);
-
-  const norm    = Math.min(1, Math.max(0, snr / CFG.SNR_MAX));
-  const fillEnd = Math.PI + norm * Math.PI;
-
-  // Track
-  SNR_CTX2.beginPath();
-  SNR_CTX2.arc(cx, cy, r, Math.PI, 2 * Math.PI);
-  SNR_CTX2.strokeStyle = 'rgba(0,200,160,0.08)';
-  SNR_CTX2.lineWidth   = 10;
-  SNR_CTX2.lineCap     = 'round';
-  SNR_CTX2.stroke();
-
-  // Gradient fill
-  const grd = SNR_CTX2.createLinearGradient(cx - r, cy, cx + r, cy);
-  grd.addColorStop(0,   '#ff2d2d');
-  grd.addColorStop(0.5, '#ffb700');
-  grd.addColorStop(1,   '#00e5a0');
-  SNR_CTX2.beginPath();
-  SNR_CTX2.arc(cx, cy, r, Math.PI, fillEnd);
-  SNR_CTX2.strokeStyle = grd;
-  SNR_CTX2.lineWidth   = 10;
-  SNR_CTX2.lineCap     = 'round';
-  SNR_CTX2.stroke();
-
-  // Min/max labels
-  SNR_CTX2.fillStyle  = '#3a5566';
-  SNR_CTX2.font       = '8px "Share Tech Mono"';
-  SNR_CTX2.textAlign  = 'left';
-  SNR_CTX2.fillText('0', cx - r - 2, cy + 14);
-  SNR_CTX2.textAlign  = 'right';
-  SNR_CTX2.fillText(CFG.SNR_MAX, cx + r + 2, cy + 14);
-}
-
-// ══════════════════════════════════════
-// WATERFALL
-// ══════════════════════════════════════
-const WF_CVS = $('waterfall-canvas');
-const WF_CTX = WF_CVS.getContext('2d');
-
-function pushWaterfall(magnitudes) {
-  const W    = WF_CVS.width;
-  const H    = WF_CVS.height;
-  const rowH = Math.max(1, Math.ceil(H / CFG.WATERFALL_ROWS));
-
-  // Scroll down
-  const img = WF_CTX.getImageData(0, 0, W, H - rowH);
-  WF_CTX.putImageData(img, 0, rowH);
-
-  // New row at top
-  const binW = W / magnitudes.length;
-  magnitudes.forEach((mag, i) => {
-    const norm = Math.min(1, mag / 1.2);
+function pushWaterfall(mags) {
+  if (!wfCtx || !wfCanvas) return;
+  const W = wfCanvas.offsetWidth || 240;
+  if (wfCanvas.width !== W) wfCanvas.width = W;
+  const H = wfCanvas.height || 160;
+  const rowH = Math.max(1, Math.ceil(H / 60));
+  const img = wfCtx.getImageData(0, 0, W, H - rowH);
+  wfCtx.putImageData(img, 0, rowH);
+  const binW = W / mags.length;
+  mags.forEach((m, i) => {
+    const n = Math.min(1, m / 1.2);
     let r, g, b;
-    if (STATE.attackActive) {
-      r = Math.round(180 + norm * 75); g = Math.round(norm * 50); b = Math.round(norm * 40);
-    } else if (STATE.hopActive) {
-      r = 0; g = Math.round(100 + norm * 120); b = Math.round(150 + norm * 105);
-    } else {
-      r = 0; g = Math.round(80 + norm * 175); b = Math.round(60 + norm * 80);
-    }
-    WF_CTX.fillStyle = `rgb(${r},${g},${b})`;
-    WF_CTX.fillRect(Math.round(i * binW), 0, Math.ceil(binW) + 1, rowH);
+    if (attacking) { r = Math.round(180+n*75); g = Math.round(n*50); b = 0; }
+    else           { r = 0; g = Math.round(80+n*175); b = Math.round(60+n*80); }
+    wfCtx.fillStyle = `rgb(${r},${g},${b})`;
+    wfCtx.fillRect(Math.round(i*binW), 0, Math.ceil(binW)+1, rowH);
   });
 }
 
-// ══════════════════════════════════════
-// HOP CHIPS
-// ══════════════════════════════════════
-function renderHopChips(currentFreq) {
-  if (!DOM.hopChips) return;
-  DOM.hopChips.innerHTML = CFG.HOP_SEQUENCE.map(f => {
-    const active = (f === currentFreq) && STATE.hopActive;
-    return `<span class="hop-chip${active ? ' current' : ''}">${f}Hz</span>`;
-  }).join('');
+// ── Hop chips ────────────────────────────────────────────
+const HOP_SEQ = [10,14,8,17,11,19,7,13,16,9];
+function renderChips(currentFreq) {
+  const el = $('hop-chips'); if (!el) return;
+  el.innerHTML = HOP_SEQ.map(f =>
+    `<span class="hop-chip${(f === currentFreq && hopping) ? ' current' : ''}">${f}Hz</span>`
+  ).join('');
 }
-renderHopChips(10);
+renderChips(10);
 
-// ══════════════════════════════════════
-// EVENT LOG
-// ══════════════════════════════════════
-function addLogEntry(severity, message) {
-  if (!DOM.eventLog) return;
-  const ts  = new Date().toISOString().slice(11, 22);
-  const el  = document.createElement('div');
-  el.className = `log-entry severity-${(severity || 'info').toLowerCase()}`;
-  el.innerHTML = `
-    <span class="log-ts">${ts}</span>
-    <div class="log-body">
-      <div class="log-sev">${severity}</div>
-      <div class="log-msg">${message}</div>
-    </div>`;
-  DOM.eventLog.prepend(el);
-  while (DOM.eventLog.children.length > CFG.MAX_LOG_EVENTS)
-    DOM.eventLog.removeChild(DOM.eventLog.lastChild);
-  if (DOM.logCount)
-    DOM.logCount.textContent = `${DOM.eventLog.children.length} events`;
-}
+// ════════════════════════════════════════════════════════
+//  MAIN UPDATE
+// ════════════════════════════════════════════════════════
+function update(d) {
+  attacking  = !!d.attacking;
+  hopping    = !!d.hopping;
+  frameCount++;
 
-// ══════════════════════════════════════
-// ALERT HANDLER
-// ══════════════════════════════════════
-let prevAlertActive = false;
-
-function handleAlert(alert) {
-  if (!alert) return;
-  const { active, severity, message } = alert;
-
-  if (active && !prevAlertActive) {
-    STATE.alertCount++;
-    if (DOM.statAlerts) DOM.statAlerts.textContent = STATE.alertCount;
-    addLogEntry(severity || 'CRITICAL', message || 'Jamming attack detected');
+  // SNR
+  const snr = +d.snr_db.toFixed(1);
+  const sv  = $('snr-value');
+  if (sv) {
+    sv.textContent    = snr;
+    sv.style.color    = snr < 5 ? '#ff2d2d' : snr < 12 ? '#ffb700' : '#00e5a0';
+    sv.style.textShadow = snr < 5 ? '0 0 20px rgba(255,45,45,.5)' : '0 0 18px rgba(0,229,160,.4)';
   }
-  if (!active && prevAlertActive) {
-    addLogEntry('INFO', 'Signal restored — threat cleared');
+  drawGauge(snr);
+  snrHistory.push(snr);
+  if (snrHistory.length > 200) snrHistory.shift();
+  const avg = (snrHistory.reduce((a,b)=>a+b,0)/snrHistory.length).toFixed(1);
+  const sa = $('stat-avg-snr'); if (sa) sa.textContent = `${avg} dB`;
+
+  // Entropy
+  const ent = d.spectral_entropy;
+  const ev  = $('entropy-value'); if (ev) ev.textContent = ent.toFixed(3);
+  const eb  = $('entropy-bar');
+  if (eb) {
+    eb.style.width      = `${Math.min(100, ent*150)}%`;
+    eb.style.background = ent > 0.65 ? '#ff2d2d' : ent > 0.4 ? '#ffb700' : '#00e5a0';
   }
-  prevAlertActive = !!active;
-
-  if (DOM.alertOverlay)  DOM.alertOverlay.style.display  = active ? 'flex' : 'none';
-  if (DOM.overlayDetail && message) DOM.overlayDetail.textContent = message;
-  document.body.classList.toggle('attacking', !!active);
-}
-
-// ══════════════════════════════════════
-// CLOCK
-// ══════════════════════════════════════
-function updateClock() {
-  const now     = new Date();
-  const elapsed = Math.floor((Date.now() - STATE.sessionStart) / 1000);
-  const mm      = String(Math.floor(elapsed / 60)).padStart(2, '0');
-  const ss      = String(elapsed % 60).padStart(2, '0');
-  const upStr   = `${mm}:${ss}`;
-
-  if (DOM.utcClock)    DOM.utcClock.textContent    = now.toUTCString().slice(17, 25);
-  if (DOM.sessionTimer) DOM.sessionTimer.textContent = upStr;
-  if (DOM.statUptime)  DOM.statUptime.textContent   = upStr;
-}
-setInterval(updateClock, 1000);
-
-// ══════════════════════════════════════
-// MAIN UPDATE — called every frame
-// ══════════════════════════════════════
-function updateDisplay(data) {
-  const {
-    snr_db, spectral_entropy,
-    fft_frequencies, fft_magnitudes,
-    time_domain,
-    current_frequency,
-    attacking, hopping,
-    alert, mode,
-  } = data;
-
-  STATE.attackActive = !!attacking;
-  STATE.hopActive    = !!hopping;
-  STATE.frameCount++;
-
-  // ── SNR ──────────────────────────────────────────────
-  const snrVal = +snr_db.toFixed(1);
-  if (DOM.snrValue) DOM.snrValue.textContent = snrVal;
-  drawSNRGauge(snrVal);
-
-  STATE.snrHistory.push(snrVal);
-  if (STATE.snrHistory.length > 100) STATE.snrHistory.shift();
-  const avgSnr = (STATE.snrHistory.reduce((a, b) => a + b, 0) / STATE.snrHistory.length).toFixed(1);
-  if (DOM.statAvgSnr) DOM.statAvgSnr.textContent = `${avgSnr} dB`;
-
-  // ── Entropy ───────────────────────────────────────────
-  if (DOM.entropyValue) DOM.entropyValue.textContent = spectral_entropy.toFixed(3);
-  const entNorm = Math.min(100, spectral_entropy * 150);
-  if (DOM.entropyBar)  DOM.entropyBar.style.width    = `${entNorm}%`;
-  if (spectral_entropy > STATE.peakEntropy) {
-    STATE.peakEntropy = spectral_entropy;
-    if (DOM.statPeakEnt) DOM.statPeakEnt.textContent = spectral_entropy.toFixed(3);
+  if (ent > peakEntropy) {
+    peakEntropy = ent;
+    const pe = $('stat-peak-ent'); if (pe) pe.textContent = ent.toFixed(3);
   }
 
-  // ── Threat bar ────────────────────────────────────────
-  const snrDrop   = Math.max(0, 25 - snrVal);
-  const threatPct = Math.min(100, Math.round((snrDrop / 25) * 70 + entNorm * 0.3));
-  if (DOM.threatPct)  DOM.threatPct.textContent  = `${threatPct}%`;
-  if (DOM.threatFill) DOM.threatFill.style.width = `${threatPct}%`;
+  // Threat
+  const snrDrop = Math.max(0, 25 - snr);
+  const tpct    = Math.min(100, Math.round(snrDrop/25*70 + Math.min(1,ent)*30));
+  const tp = $('threat-pct');
+  if (tp) { tp.textContent = `${tpct}%`; tp.style.color = tpct>70?'#ff2d2d':tpct>40?'#ffb700':'#00e5a0'; }
+  const tf = $('threat-bar-fill'); if (tf) tf.style.width = `${tpct}%`;
 
-  // ── Frequency & hop chips ─────────────────────────────
-  if (current_frequency !== undefined) {
-    if (DOM.freqValue)  DOM.freqValue.textContent  = `${current_frequency} Hz`;
-    if (DOM.freqStatus) DOM.freqStatus.textContent = hopping ? 'HOPPING' : 'LOCKED';
-    renderHopChips(current_frequency);
-  }
+  // Freq / mode
+  const freq = d.current_frequency;
+  const fv   = $('freq-value');  if (fv) fv.textContent = `${freq} Hz`;
+  const fs   = $('freq-status'); if (fs) fs.textContent = hopping ? 'HOPPING' : 'LOCKED';
+  renderChips(freq);
 
-  // ── Mode badge ────────────────────────────────────────
   const modeStr = attacking ? 'UNDER ATTACK' : hopping ? 'HOPPING' : 'SECURE';
-  if (DOM.modeValue)  DOM.modeValue.textContent  = modeStr;
-  if (DOM.badgeLabel) DOM.badgeLabel.textContent = modeStr;
-  if (DOM.badge) {
-    DOM.badge.className = 'system-badge ' +
-      (attacking ? 'badge-attack' : hopping ? 'badge-hop' : 'badge-secure');
+  const bl = $('badge-label'); if (bl) bl.textContent = modeStr;
+  const mv = $('mode-value');
+  if (mv) { mv.textContent = modeStr; mv.style.color = attacking?'#ff2d2d':hopping?'#00b8ff':'#00e5a0'; }
+
+  // Badge
+  const bd = $('sys-badge');
+  if (bd) {
+    bd.className    = 'sys-badge' + (attacking ? ' attack' : hopping ? ' hop' : '');
+    bd.dataset.state = attacking ? 'attack' : hopping ? 'hop' : 'secure';
   }
+  document.querySelectorAll('.node-dot').forEach(dot => {
+    dot.dataset.state = attacking ? 'critical' : hopping ? 'warning' : 'ok';
+  });
 
-  // ── FFT CHART ─────────────────────────────────────────
-  // Only render bins where frequency <= FFT_MAX_HZ (30 Hz)
-  // This makes the 10 Hz spike large and prominent
-  if (fft_frequencies && fft_magnitudes && fft_frequencies.length > 0) {
-    // Find the cutoff index
-    const cutoff = fft_frequencies.findIndex(f => f > CFG.FFT_MAX_HZ);
-    const endIdx = cutoff > 0 ? cutoff : Math.min(60, fft_frequencies.length);
+  // ══════════════════════════════════════════════════════
+  //  FFT — correct frequency-to-bin mapping
+  // ══════════════════════════════════════════════════════
+  if (d.fft_frequencies && d.fft_magnitudes) {
+    const freqs = d.fft_frequencies;
+    const mags  = d.fft_magnitudes;
 
-    const freqSlice = fft_frequencies.slice(0, endIdx).map(f => Math.round(f * 10) / 10);
-    const magSlice  = fft_magnitudes.slice(0, endIdx);
+    // Slice to 0–25 Hz
+    let cutoff = freqs.length;
+    for (let i = 0; i < freqs.length; i++) {
+      if (freqs[i] > 25) { cutoff = i; break; }
+    }
 
-    fftChart.data.labels                 = freqSlice;
-    fftChart.data.datasets[0].data      = magSlice;
+    const fSlice = freqs.slice(0, cutoff).map(f => Math.round(f * 10) / 10);
+    const mSlice = mags.slice(0, cutoff);
 
-    // Peak frequency label
-    const peak      = Math.max(...magSlice);
-    const peakIdx   = magSlice.indexOf(peak);
-    const peakFreq  = freqSlice[peakIdx];
-    const noiseFloor = magSlice
-      .filter((_, i) => Math.abs(freqSlice[i] - (current_frequency || 10)) > 2)
-      .reduce((a, b) => a + b, 0) / Math.max(1, magSlice.length - 3);
+    // Noise floor = median of off-signal bins
+    const offBins = mSlice.filter((_, i) => Math.abs(fSlice[i] - freq) > 2);
+    const sorted  = [...offBins].sort((a,b) => a-b);
+    const floor   = sorted.length ? sorted[Math.floor(sorted.length * 0.5)] : 0;
 
-    if (DOM.fftPeakBadge)  DOM.fftPeakBadge.textContent  = `PEAK: ${peakFreq} Hz`;
-    if (DOM.fftFloorBadge) DOM.fftFloorBadge.textContent = `FLOOR: ${noiseFloor.toFixed(3)}`;
+    const peak  = Math.max(...mSlice);
+    const peakF = fSlice[mSlice.indexOf(peak)];
 
-    // Noise floor line
-    fftChart.data.datasets[1].data = new Array(endIdx).fill(noiseFloor);
+    const fpb = $('fft-peak-badge');  if (fpb) fpb.textContent = `PEAK: ${peakF} Hz`;
+    const ffb = $('fft-floor-badge'); if (ffb) ffb.textContent = `FLOOR: ${floor.toFixed(3)}`;
 
-    // Y-axis: expand during attack so noise floor rise is visible
-    fftChart.options.scales.y.max = attacking ? 4.0 : 1.5;
+    const colors = mSlice.map(v => {
+      const n = Math.min(1, v);
+      if (attacking) return `rgba(255,${Math.round(45+n*60)},45,${0.45+n*0.55})`;
+      if (hopping)   return `rgba(0,${Math.round(150+n*80)},255,${0.45+n*0.55})`;
+      return `rgba(0,${Math.round(180+n*49)},${Math.round(120+n*20)},${0.5+n*0.5})`;
+    });
 
+    fftChart.data.labels                      = fSlice;
+    fftChart.data.datasets[0].data            = mSlice;
+    fftChart.data.datasets[0].backgroundColor = colors;
+    fftChart.data.datasets[1].data            = new Array(cutoff).fill(floor);
+    fftChart.options.scales.y.max             = attacking ? 4.0 : 1.5;
     fftChart.update('none');
-    pushWaterfall(magSlice);
+    pushWaterfall(mSlice);
   }
 
-  // ── WAVEFORM ──────────────────────────────────────────
-  // Push all samples from frame into rolling buffer
-  if (time_domain && time_domain.length > 0) {
-    for (const s of time_domain) {
-      waveBuffer.push(s);
-      if (waveBuffer.length > CFG.WAVEFORM_POINTS) waveBuffer.shift();
+  // ══════════════════════════════════════════════════════
+  //  WAVEFORM — push full frame into rolling buffer
+  // ══════════════════════════════════════════════════════
+  if (d.time_domain && d.time_domain.length > 0) {
+    for (const s of d.time_domain) {
+      waveBuf.push(s);
+      if (waveBuf.length > WAVE_BUF_SIZE) waveBuf.shift();
     }
+    waveChart.data.datasets[0].data        = [...waveBuf];
+    waveChart.data.datasets[0].borderColor = attacking ? '#ff4455' : hopping ? '#00b8ff' : '#00e5a0';
+    waveChart.options.scales.y.min         = attacking ? -6   : -1.8;
+    waveChart.options.scales.y.max         = attacking ?  6   :  1.8;
 
-    waveChart.data.datasets[0].data = [...waveBuffer];
-    waveChart.data.datasets[0].borderColor =
-      attacking ? '#ff4455' : hopping ? '#00b8ff' : '#00e5a0';
-
-    // Auto-expand Y axis during attack — noise can hit ±4
-    waveChart.options.scales.y.min = attacking ? -5 : -3;
-    waveChart.options.scales.y.max = attacking ?  5 :  3;
-
-    const amp = Math.max(...time_domain.map(Math.abs));
-    const rms = Math.sqrt(time_domain.reduce((s, v) => s + v * v, 0) / time_domain.length);
-    if (DOM.waveAmpBadge) DOM.waveAmpBadge.textContent = `AMP: ${amp.toFixed(3)}`;
-    if (DOM.waveRmsBadge) DOM.waveRmsBadge.textContent = `RMS: ${rms.toFixed(3)}`;
-
+    const amp = Math.max(...d.time_domain.map(Math.abs));
+    const rms = Math.sqrt(d.time_domain.reduce((s,v)=>s+v*v,0) / d.time_domain.length);
+    const wa = $('wave-amp-badge'); if (wa) wa.textContent = `AMP: ${amp.toFixed(3)}`;
+    const wr = $('wave-rms-badge'); if (wr) wr.textContent = `RMS: ${rms.toFixed(3)}`;
     waveChart.update('none');
   }
 
-  // ── Alert ─────────────────────────────────────────────
-  handleAlert(alert);
-
-  // ── Session stats ─────────────────────────────────────
-  if (DOM.statFrames) DOM.statFrames.textContent = STATE.frameCount;
-  if (hopping) {
-    STATE.hopCount++;
-    if (DOM.statHops) DOM.statHops.textContent = STATE.hopCount;
-  }
-}
-
-// ══════════════════════════════════════
-// CONTROLS — REST + SocketIO events
-// ══════════════════════════════════════
-async function apiCall(endpoint) {
-  try {
-    return await fetch(`${CFG.BACKEND_URL}${endpoint}`, { method: 'POST' });
-  } catch (e) {
-    addLogEntry('ERROR', `API call failed: ${endpoint}`);
-  }
-}
-
-if (DOM.attackBtn) {
-  DOM.attackBtn.addEventListener('click', async () => {
-    if (!STATE.attackActive) {
-      await apiCall('/api/attack/start');
-      addLogEntry('CRITICAL', 'Manual attack simulation initiated');
-      DOM.attackBtn.textContent = '■ STOP ATTACK';
-      if (DOM.defendBtn) DOM.defendBtn.disabled = false;
-    } else {
-      await apiCall('/api/attack/stop');
-      addLogEntry('INFO', 'Attack simulation stopped');
-      DOM.attackBtn.textContent = '▶ INITIATE ATTACK';
-      if (DOM.defendBtn) DOM.defendBtn.disabled = true;
+  // Alert overlay
+  const al = d.alert;
+  if (al) {
+    if (al.active && !prevAlertActive) {
+      alertCount++;
+      const ac = $('stat-alerts'); if (ac) ac.textContent = alertCount;
+      log(al.severity || 'CRITICAL', al.message || 'Jamming attack detected');
     }
-  });
+    if (!al.active && prevAlertActive) log('INFO', 'Signal restored — threat cleared');
+    prevAlertActive = !!al.active;
+    const ao = $('alert-overlay'); if (ao) ao.style.display = al.active ? 'flex' : 'none';
+    document.body.classList.toggle('attacking', !!al.active);
+  }
+
+  const sf = $('stat-frames'); if (sf) sf.textContent = frameCount.toLocaleString();
 }
 
-if (DOM.defendBtn) {
-  DOM.defendBtn.addEventListener('click', async () => {
-    await apiCall('/api/countermeasure/deploy');
-    addLogEntry('INFO', 'Frequency hopping countermeasure deployed');
-    DOM.attackBtn.textContent = '▶ INITIATE ATTACK';
-    DOM.defendBtn.disabled    = true;
-  });
+// ── API helpers ──────────────────────────────────────────
+async function api(path) {
+  try { await fetch(BACKEND + path, { method: 'POST' }); }
+  catch(e) { log('ERROR', `API call failed: ${path}`); }
 }
 
-if (DOM.resetBtn) {
-  DOM.resetBtn.addEventListener('click', async () => {
-    await apiCall('/api/reset');
-    STATE.attackActive = false;
-    STATE.hopActive    = false;
-    STATE.frameCount   = 0;
-    STATE.alertCount   = 0;
-    STATE.hopCount     = 0;
-    STATE.snrHistory   = [];
-    STATE.peakEntropy  = 0;
-    waveBuffer.fill(0);
-    waveChart.data.datasets[0].data = [...waveBuffer];
-    waveChart.update('none');
-    addLogEntry('INFO', 'System reset — recalibrating baseline');
-    if (DOM.attackBtn) DOM.attackBtn.textContent = '▶ INITIATE ATTACK';
-    if (DOM.defendBtn) DOM.defendBtn.disabled    = true;
-  });
-}
+// ── Controls ─────────────────────────────────────────────
+const attackBtn = $('attack-btn');
+const defendBtn = $('defend-btn');
+const resetBtn  = $('reset-btn');
 
-if (DOM.noiseSlider) {
-  DOM.noiseSlider.addEventListener('input', e => {
-    const val = parseFloat(e.target.value);
-    if (DOM.noiseDisplay) DOM.noiseDisplay.textContent = val.toFixed(1);
-  });
-}
+if (attackBtn) attackBtn.addEventListener('click', async () => {
+  if (!attacking) {
+    await api('/api/attack/start');
+    log('CRITICAL', 'Manual attack simulation initiated');
+    const txt = $('attack-btn-text') || attackBtn;
+    if (txt) txt.textContent = 'Stop Attack';
+    attackBtn.classList.add('active');
+    if (defendBtn) defendBtn.disabled = false;
+  } else {
+    await api('/api/attack/stop');
+    log('INFO', 'Attack simulation stopped');
+    const txt = $('attack-btn-text') || attackBtn;
+    if (txt) txt.textContent = 'Initiate Attack';
+    attackBtn.classList.remove('active');
+    if (defendBtn) defendBtn.disabled = true;
+  }
+});
 
-// ══════════════════════════════════════
-// WEBSOCKET
-// ══════════════════════════════════════
-let socket = null;
+if (defendBtn) defendBtn.addEventListener('click', async () => {
+  await api('/api/countermeasure/deploy');
+  hopCount++;
+  const sh = $('stat-hops'); if (sh) sh.textContent = hopCount;
+  log('HOP', 'Frequency hopping countermeasure deployed');
+  const txt = $('attack-btn-text') || attackBtn;
+  if (txt) txt.textContent = 'Initiate Attack';
+  if (attackBtn) attackBtn.classList.remove('active');
+  defendBtn.disabled = true;
+});
 
-function connectBackend() {
-  socket = io(CFG.BACKEND_URL, {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-  });
+if (resetBtn) resetBtn.addEventListener('click', async () => {
+  await api('/api/reset');
+  attacking = false; hopping = false;
+  frameCount = 0; alertCount = 0; hopCount = 0;
+  snrHistory = []; peakEntropy = 0;
+  waveBuf.fill(0);
+  waveChart.data.datasets[0].data = [...waveBuf];
+  waveChart.update('none');
+  log('INFO', 'System reset — recalibrating baseline');
+  const txt = $('attack-btn-text') || attackBtn;
+  if (txt) txt.textContent = 'Initiate Attack';
+  if (attackBtn) attackBtn.classList.remove('active');
+  if (defendBtn) defendBtn.disabled = true;
+  const ao = $('alert-overlay'); if (ao) ao.style.display = 'none';
+});
 
-  socket.on('connect', () => {
-    if (DOM.wsStatus) DOM.wsStatus.textContent = '⬤ BACKEND: CONNECTED';
-    addLogEntry('INFO', 'WebSocket connected to Flask-SocketIO backend');
-  });
+const ns = $('noise-slider');
+if (ns) ns.addEventListener('input', e => {
+  const nd = $('noise-display'); if (nd) nd.textContent = (+e.target.value).toFixed(1);
+});
 
-  socket.on('disconnect', () => {
-    if (DOM.wsStatus) DOM.wsStatus.textContent = '⬤ BACKEND: DISCONNECTED';
-    addLogEntry('ERROR', 'WebSocket disconnected — attempting reconnect');
-  });
+// ── WebSocket ────────────────────────────────────────────
+const socket = io(BACKEND, { transports: ['websocket','polling'], reconnection: true });
 
-  socket.on('connect_error', err => {
-    if (DOM.wsStatus) DOM.wsStatus.textContent = '⬤ BACKEND: ERROR';
-    console.error('Socket error:', err.message);
-  });
+socket.on('connect', () => {
+  const ws = $('ws-status');
+  if (ws) { ws.textContent = '⬤ BACKEND: CONNECTED'; ws.className = 'fi conn'; }
+  log('INFO', 'WebSocket connected to Flask-SocketIO backend');
+});
+socket.on('disconnect', () => {
+  const ws = $('ws-status');
+  if (ws) { ws.textContent = '⬤ BACKEND: DISCONNECTED'; ws.className = 'fi disc'; }
+  log('ERROR', 'WebSocket disconnected');
+});
+socket.on('connect_error', () => {
+  const ws = $('ws-status');
+  if (ws) { ws.textContent = '⬤ BACKEND: ERROR'; ws.className = 'fi disc'; }
+});
+socket.on('signal_data', update);
+socket.on('alert', d => { if (d && d.message) log(d.severity || 'INFO', d.message); });
 
-  socket.on('signal_data', data => updateDisplay(data));
-
-  socket.on('alert', data => {
-    if (data && data.message)
-      addLogEntry(data.severity || 'INFO', data.message);
-  });
-}
-
-// ══════════════════════════════════════
-// BOOT
-// ══════════════════════════════════════
+// ── Boot ─────────────────────────────────────────────────
 (function boot() {
-  addLogEntry('INFO', 'SpectraShield RF-IDS initializing…');
-  addLogEntry('INFO', 'FFT engine ready — 64-bin resolution');
-  addLogEntry('INFO', 'Baseline spectral fingerprint recording…');
-
-  updateClock();
-  drawSNRGauge(0);
-  renderHopChips(10);
-
-  if (!CFG.DEMO_MODE) connectBackend();
+  drawGauge(0);
+  log('INFO', 'SpectraShield RF-IDS initializing…');
+  log('INFO', 'FFT engine ready — 0–25 Hz display window');
+  log('INFO', 'Awaiting backend WebSocket connection…');
 })();
