@@ -474,6 +474,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <span class="fi">Real-world: RTL-SDR | GNU Radio</span>
 </div>
 
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 'use strict';
 
@@ -633,6 +634,7 @@ function startAttack(){
   applyMode('ATTACK');
   addLog('CRITICAL','Jamming attack initiated — broadband noise injection active',
          `Noise: ${S.noise.toFixed(1)} | Freq: ${CFG.HOP_SEQ[S.hopIdx]}Hz`);
+  if(socket) socket.emit('attack_start', {noise_level: S.noise});
 }
 function stopAttack(){
   S.attacking = false;
@@ -642,6 +644,7 @@ function stopAttack(){
   $('alert-overlay').classList.add('hidden');
   applyMode('NORMAL');
   addLog('INFO','Attack disabled — monitoring for residual interference');
+  if(socket) socket.emit('attack_stop');
 }
 function deployHop(){
   S.hopping = true; S.hops++;
@@ -654,6 +657,7 @@ function deployHop(){
   $('freq-status').textContent = 'HOPPING';
   addLog('HOP',`Frequency hopping — jumped to ${nf}Hz`,
          `From: ${CFG.HOP_SEQ[prev]}Hz → To: ${nf}Hz`);
+  if(socket) socket.emit('countermeasure_deploy', {new_freq: nf});
   setTimeout(() => {
     S.hopping = false; S.attacking = false;
     $('attack-btn').classList.remove('active');
@@ -677,6 +681,7 @@ function resetSys(){
   renderHops(0, -1);
   applyMode('NORMAL');
   addLog('INFO','System reset — recalibrating baseline');
+  if(socket) socket.emit('reset_baseline');
 }
 
 // ══════════════════════════════
@@ -865,7 +870,16 @@ function genFrame(){
 // DISPLAY UPDATE
 // ══════════════════════════════
 function update(fr){
-  const {td,fft,snr,ent,freq} = fr;
+  // Support both backend field names and demo field names
+  const td   = fr.time_domain      || fr.td;
+  const fft  = fr.fft_magnitudes   || fr.fft;
+  const snr  = fr.snr_db           !== undefined ? fr.snr_db  : fr.snr;
+  const ent  = fr.spectral_entropy !== undefined ? fr.spectral_entropy : fr.ent;
+  const freq = fr.current_frequency !== undefined ? fr.current_frequency : fr.freq;
+  // Sync attack/hop state from backend
+  if(fr.attacking !== undefined) S.attacking = fr.attacking;
+  if(fr.hopping   !== undefined) S.hopping   = fr.hopping;
+  if(fr.mode){ applyMode(fr.mode); }
 
   // SNR
   const snrR = +snr.toFixed(1);
@@ -891,8 +905,8 @@ function update(fr){
   // Frequency display
   $('freq-value').textContent = `${freq} Hz`;
 
-  // Auto-detect anomaly
-  if(snrR<10 && ent>.65 && S.mode==='NORMAL' && !S.attacking){
+  // Auto-detect anomaly (demo mode only — backend drives mode when connected)
+  if(!socket && snrR<10 && ent>.65 && S.mode==='NORMAL' && !S.attacking){
     applyMode('ATTACK'); S.alerts++;
     addLog('CRITICAL','Anomaly auto-detected — SNR collapsed + entropy spike',
            `SNR: ${snrR}dB | Entropy: ${ent.toFixed(3)}`);
@@ -936,7 +950,7 @@ function startDemo(){
 function tryBackend(){
   if(typeof io === 'undefined'){ startDemo(); return; }
   try{
-    socket = io(CFG.BACKEND, {transports:['websocket'],timeout:3000,reconnectionAttempts:3});
+    socket = io(CFG.BACKEND, {transports:['websocket','polling'],timeout:3000,reconnectionAttempts:3});
     socket.on('connect', () => {
       $('ws-status').textContent = '⬤ BACKEND: CONNECTED';
       $('ws-status').className   = 'fi conn';

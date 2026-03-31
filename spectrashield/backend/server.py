@@ -1,10 +1,11 @@
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from signal_engine import SignalEngine, analyse_frame
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -12,6 +13,18 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", logger
 
 engine = SignalEngine()
 BROADCAST_HZ = 10
+
+# Absolute path to the frontend folder
+BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(BASE_DIR, '..', 'frontend')
+
+@app.route('/')
+def index():
+    return send_from_directory(FRONTEND_DIR, 'index.html')
+
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory(FRONTEND_DIR, filename)
 
 def broadcast_loop():
     while True:
@@ -49,9 +62,9 @@ def on_countermeasure(data):
 @socketio.on("reset_baseline")
 def on_reset():
     engine.stop_attack()
-    engine.hopping = False
+    engine.hopping   = False
     engine.hop_index = 0
-    engine.t = 0.0
+    engine.t         = 0.0
     emit("alert", {"severity": "INFO", "message": "Baseline reset"}, broadcast=True)
 
 @socketio.on("set_noise_level")
@@ -63,8 +76,9 @@ if __name__ == "__main__":
     print("=" * 55)
     print("  SPECTRASHIELD — Flask-SocketIO Server")
     print("=" * 55)
-    print("  Listening on  http://localhost:5000")
-    print("  Press Ctrl+C  to stop")
+    print(f"  Frontend dir: {os.path.abspath(FRONTEND_DIR)}")
+    print(f"  Listening on  http://localhost:5000")
+    print(f"  Press Ctrl+C  to stop")
     print("=" * 55)
     socketio.start_background_task(broadcast_loop)
     socketio.run(app, host="0.0.0.0", port=5000, debug=False)
