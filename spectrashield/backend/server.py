@@ -1,6 +1,5 @@
 import eventlet
 eventlet.monkey_patch()
-
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -10,7 +9,6 @@ import os
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", logger=False, engineio_logger=False)
-
 engine = SignalEngine()
 BROADCAST_HZ = 10
 
@@ -29,6 +27,7 @@ def static_files(filename):
 def broadcast_loop():
     while True:
         data = analyse_frame(engine)
+        print(f"time_domain min={min(data['time_domain']):.3f} max={max(data['time_domain']):.3f}")
         data["mode"] = "ATTACK" if engine.attacking else "HOPPING" if engine.hopping else "NORMAL"
         socketio.emit("signal_data", data)
         eventlet.sleep(1.0 / BROADCAST_HZ)

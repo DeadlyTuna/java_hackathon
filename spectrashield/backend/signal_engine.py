@@ -234,3 +234,4 @@ if __name__ == "__main__":
               f"| Entropy={data['spectral_entropy']:.4f}  ↺ HOPPING")
 
     print("\n✓ Signal engine working correctly.\n")
+

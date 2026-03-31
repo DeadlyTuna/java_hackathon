@@ -12,7 +12,7 @@
 const CFG = {
   BACKEND_URL:    'http://localhost:5000',   // Flask-SocketIO server
   MAX_LOG_EVENTS: 120,
-  WAVEFORM_POINTS: 120,
+  WAVEFORM_POINTS: 200,
   WATERFALL_ROWS:  60,
   FFT_BINS:       64,
   SNR_MAX:        30,
@@ -169,7 +169,7 @@ const waveChart = new Chart(WAVE_CTX, {
         above: 'rgba(0,229,160,0.04)',
         below: 'rgba(0,229,160,0.02)',
       },
-      tension: 0.3,
+      tension: 0,
     }],
   },
   options: {
@@ -180,7 +180,7 @@ const waveChart = new Chart(WAVE_CTX, {
     scales: {
       x: { display: false },
       y: {
-        min: -1.8, max: 1.8,
+        min: -2, max: 2,
         grid: { color: 'rgba(0,200,160,0.05)', lineWidth: 1 },
         ticks: {
           color: '#3a5566', font: { family: 'Share Tech Mono', size: 9 },
@@ -605,9 +605,10 @@ function updateDisplay(data) {
 
   // Waveform chart (scrolling)
   if (time_domain && time_domain.length > 0) {
-    const sample = time_domain[time_domain.length - 1];
-    waveData.push(sample);
-    if (waveData.length > CFG.WAVEFORM_POINTS) waveData.shift();
+    for (const sample of time_domain) {
+      waveData.push(sample);
+      if (waveData.length > CFG.WAVEFORM_POINTS) waveData.shift();
+    }
     waveChart.data.datasets[0].data = [...waveData];
     // Color waveform by state
     waveChart.data.datasets[0].borderColor =
